@@ -37,7 +37,7 @@ clawpass:
     - npm audit --omit=dev --audit-level=low
   artifacts:
     paths:
-      - skills/clawpass/dist/
+      - skills/clawpass/scripts/
     expire_in: 1 day
   rules:
     - changes:
