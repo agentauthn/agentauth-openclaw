@@ -28,18 +28,18 @@ gitlab-advanced-sast:
   before_script: []
 
 # Given the small size of the project this is fine to do
-openclaw:
+clawpass:
   stage: test
   script:
-    - cd skills/openclaw
+    - cd skills/clawpass
     - npm ci --cache ../../.npm --prefer-offline --legacy-peer-deps
     - npm run test
     - npm run build
     - npm audit --omit=dev --audit-level=low
   artifacts:
     paths:
-      - skills/openclaw/dist/
+      - skills/clawpass/dist/
     expire_in: 1 day
   rules:
     - changes:
-        - skills/openclaw/**/*
+        - skills/clawpass/**/*
