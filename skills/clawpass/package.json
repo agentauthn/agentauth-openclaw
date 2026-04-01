@@ -2,7 +2,7 @@
   "name": "clawpass-cli",
   "version": "0.1.0",
   "description": "CLI for running approval flows with LoginID Identity Gateway and OpenClaw",
-  "type": "common",
+  "type": "commonjs",
   "bin": {
     "lig": "./src/index.mjs"
   },
