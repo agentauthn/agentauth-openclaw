@@ -1,0 +1,34 @@
+{
+  "name": "clawpass-cli",
+  "version": "0.1.0",
+  "description": "CLI for running approval flows with LoginID Identity Gateway and OpenClaw",
+  "type": "common",
+  "bin": {
+    "lig": "./src/index.mjs"
+  },
+  "scripts": {
+    "start": "node ./src/index.mjs",
+    "build": "node build.mjs"
+  },
+  "keywords": [
+    "cli",
+    "approval",
+    "identity",
+    "security",
+    "openclaw",
+    "loginid",
+    "clawpass"
+  ],
+  "author": "LoginID Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "dotenv": "^17.3.1",
+    "eventsource": "^4.1.0",
+    "http-message-signatures": "^1.0.4",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.4"
+  }
+}
