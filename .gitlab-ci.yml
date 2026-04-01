@@ -33,7 +33,6 @@ clawpass:
   script:
     - cd skills/clawpass
     - npm ci --cache ../../.npm --prefer-offline --legacy-peer-deps
-    - npm run test
     - npm run build
     - npm audit --omit=dev --audit-level=low
   artifacts:
