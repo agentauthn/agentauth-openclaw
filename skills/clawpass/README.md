@@ -66,15 +66,15 @@ The script relies on the following environment variables:
 
 | Variable            | Required | Description                                                                                 |
 | ------------------- | -------- | ------------------------------------------------------------------------------------------- |
-| `AGENT_PRIVATE_KEY` | Yes      | PEM-encoded **RSA private key (RSA-PSS SHA-512)** used to sign requests to Identity Gateway |
-| `AGENT_KEY_ID`      | Yes      | Public HTTPS URL where your **corresponding public key is hosted** (used for verification)  |
+| `LIG_AGENT_PRIVATE_KEY` | Yes      | PEM-encoded **RSA private key (RSA-PSS SHA-512)** used to sign requests to Identity Gateway |
+| `LIG_AGENT_KEY_ID`      | Yes      | Public HTTPS URL where your **corresponding public key is hosted** (used for verification)  |
 | `LIG_NOTIFY`        | No       | Default notification target in format `provider:destination` (used if `--notify` not set)   |
 
 ### Example `.env`
 
 ```env
-AGENT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-AGENT_KEY_ID=https://my-domain/.well-known/agent/public-key
+LIG_AGENT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+LIG_AGENT_KEY_ID=https://my-domain/.well-known/agent/public-key
 LIG_NOTIFY=telegram:@mychat
 ```
 
@@ -139,7 +139,7 @@ openssl rsa -pubout -in private.pem -out public.pem
 Set your private key as an environment variable. Make sure it is all in one line.
 
 ```bash
-AGENT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+LIG_AGENT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 ```
 
 This key is used by the script to sign and create a identity session.
@@ -184,16 +184,16 @@ app.listen(3000);
 
 4. **Set your key ID**
 
-Set `AGENT_KEY_ID` to the **URL of your public key endpoint**:
+Set `LIG_AGENT_KEY_ID` to the **URL of your public key endpoint**:
 
 ```bash
-AGENT_KEY_ID=https://your-domain.com/.well-known/agent-key
+LIG_AGENT_KEY_ID=https://your-domain.com/.well-known/agent-key
 ```
 
 When the script makes a request:
 
-1. It signs the request using `AGENT_PRIVATE_KEY`
-2. Identity Gateway reads `AGENT_KEY_ID`
+1. It signs the request using `LIG_AGENT_PRIVATE_KEY`
+2. Identity Gateway reads `LIG_AGENT_KEY_ID`
 3. It fetches your public key from that URL
 4. It verifies the signature
 

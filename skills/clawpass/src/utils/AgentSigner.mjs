@@ -22,10 +22,10 @@ export class AgentSigner {
 
   constructor(privateKey, keyId) {
     if (!privateKey) {
-      throw new Error("Private key is required for WebBotSigner");
+      throw new Error("Private key is required for AgentSigner");
     }
     if (!keyId) {
-      throw new Error("Key ID is required for WebBotSigner");
+      throw new Error("Key ID is required for AgentSigner");
     }
     const pKey = createPrivateKey(privateKey);
     this.#key = createSigner(pKey, "rsa-pss-sha512", keyId);

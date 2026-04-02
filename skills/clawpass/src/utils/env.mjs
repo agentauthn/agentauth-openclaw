@@ -32,10 +32,10 @@ class Config {
   }
 
   getAgentPrivateKey() {
-    const pem = this._env.AGENT_PRIVATE_KEY;
+    const pem = this._env.LIG_AGENT_PRIVATE_KEY;
     if (!pem) {
       throw new Error(
-        "Missing required environment variable: AGENT_PRIVATE_KEY. " +
+        "Missing required environment variable: LIG_AGENT_PRIVATE_KEY. " +
           "Set it in your environment or .env file to enable request signing."
       );
     }
@@ -43,10 +43,10 @@ class Config {
   }
 
   getAgentKeyId() {
-    const keyId = this._env.AGENT_KEY_ID;
+    const keyId = this._env.LIG_AGENT_KEY_ID;
     if (!keyId) {
       throw new Error(
-        "Missing required environment variable: AGENT_KEY_ID. " +
+        "Missing required environment variable: LIG_AGENT_KEY_ID. " +
           "Set it in your environment or .env file to enable request signing."
       );
     }
