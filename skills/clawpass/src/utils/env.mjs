@@ -14,33 +14,44 @@
  * limitations under the License.
  */
 
-import { config } from "dotenv";
+import { config as loadDotenv } from "dotenv";
 
-config({ quiet: true });
+loadDotenv({ quiet: true });
 
-const getAgentPrivateKey = () => {
-  const pem = process.env.AGENT_PRIVATE_KEY;
-  if (!pem) {
-    throw new Error(
-      "Missing required environment variable: AGENT_PRIVATE_KEY. " +
-      "Set it in your environment or .env file to enable request signing."
-    );
+class Config {
+  constructor(env = process.env) {
+    this._env = env;
   }
-  return pem.replace("\\n", "\n");
-};
 
-const getAgentKeyId = () => {
-  const keyId = process.env.AGENT_KEY_ID;
-  if (!keyId) {
-    throw new Error(
-      "Missing required environment variable: AGENT_KEY_ID. " +
-      "Set it in your environment or .env file to enable request signing."
-    );
+  get idgwBaseUrl() {
+    return this._env.IDGW_BASE_URL || "http://localhost:8090";
   }
-  return keyId;
+
+  get ligNotify() {
+    return this._env.LIG_NOTIFY;
+  }
+
+  getAgentPrivateKey() {
+    const pem = this._env.AGENT_PRIVATE_KEY;
+    if (!pem) {
+      throw new Error(
+        "Missing required environment variable: AGENT_PRIVATE_KEY. " +
+          "Set it in your environment or .env file to enable request signing."
+      );
+    }
+    return pem.replace(/\\n/g, "\n");
+  }
+
+  getAgentKeyId() {
+    const keyId = this._env.AGENT_KEY_ID;
+    if (!keyId) {
+      throw new Error(
+        "Missing required environment variable: AGENT_KEY_ID. " +
+          "Set it in your environment or .env file to enable request signing."
+      );
+    }
+    return keyId;
+  }
 }
 
-export const IDGW_BASE_URL = process.env.IDGW_BASE_URL || "http://localhost:8090";
-export const AGENT_PRIVATE_KEY = getAgentPrivateKey();
-export const AGENT_KEY_ID = getAgentKeyId();
-export const LIG_NOTIFY = process.env.LIG_NOTIFY;
+export const config = new Config();
