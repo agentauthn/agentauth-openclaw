@@ -22,26 +22,35 @@ import { TestNotifyCommand } from './commands/TestNotifyCommand.mjs';
 import { HttpClient } from '../services/HttpClient.mjs';
 import { AgentSigner } from '../utils/AgentSigner.mjs';
 import { SseClient } from '../services/SseClient.mjs';
-import { AGENT_KEY_ID, AGENT_PRIVATE_KEY, IDGW_BASE_URL } from '../utils/env.mjs';
+import { config } from '../utils/env.mjs';
 import { OpenClawService } from '../services/OpenClawService.mjs';
 
-const signer = new AgentSigner(AGENT_PRIVATE_KEY, AGENT_KEY_ID);
-const httpClient = new HttpClient({ signer });
-const sseClient = new SseClient();
 const openClawService = new OpenClawService();
-const idgwService = new IdentityGateWay(IDGW_BASE_URL, httpClient, sseClient, openClawService);
 
-const commands = {
-  'create-session': new CreateSessionCommand(idgwService),
-  'wait-for-session': new WaitForSessionCommand(idgwService),
-  'approval-flow': new ApprovalFlowCommand(idgwService),
-  'test-notify': new TestNotifyCommand(openClawService),
+let idgwService;
+const getIdgwService = () => {
+  if (idgwService) {
+    return idgwService;
+  }
+
+  const signer = new AgentSigner(config.getAgentPrivateKey(), config.getAgentKeyId());
+  const httpClient = new HttpClient({ signer });
+  const sseClient = new SseClient();
+  idgwService = new IdentityGateWay(config.idgwBaseUrl, httpClient, sseClient, openClawService);
+  return idgwService;
+};
+
+const commandFactories = {
+  'create-session': () => new CreateSessionCommand(getIdgwService()),
+  'wait-for-session': () => new WaitForSessionCommand(getIdgwService()),
+  'approval-flow': () => new ApprovalFlowCommand(getIdgwService()),
+  'test-notify': () => new TestNotifyCommand(openClawService),
 };
 
 export function getCommand(commandName) {
-  const command = commands[commandName];
-  if (!command) {
+  const factory = commandFactories[commandName];
+  if (!factory) {
     throw new Error(`Command not found: ${commandName}`);
   }
-  return command;
+  return factory();
 }
