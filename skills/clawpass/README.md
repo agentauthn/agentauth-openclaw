@@ -1,73 +1,127 @@
-# ClawPass
+# ClawPass (Approval Flow for OpenClaw)
 
-An OpenClaw skill for accessing LoginID's Identity Gateway (IDGW).
+This skill adds **human approval + identity verification** before OpenClaw performs dangerous actions.
 
-Also includes a command-line tool for interacting with IDGW, with support for OpenClaw-based notifications.
+OpenClaw will automatically use this when it detects a **high-risk action**, such as:
 
-This CLI enables secure approval flows for sensitive actions, allowing users to review and approve operations via a browser or configured notification channel.
-
----
-
-## Features
-
-- Create and manage approval sessions
-- Wait for user approval via server-sent events (SSE)
-- End-to-end approval flow command
-- Notifications via OpenClaw (Telegram, Slack, WhatsApp, etc.)
-- Test notification delivery
-- Signed API requests using agent credentials
+- Deleting files or data
+- Sending emails or external writes
+- Database changes
+- Deployments or production changes
+- Security or permission updates
 
 ---
 
-## Installation
+## Command Used by OpenClaw
 
 ```bash
-npm link
-lig --help
-````
-
-Or run locally:
-
-```bash
-npm install
-node ./src/index.mjs --help
+node ./scripts/cli.js approval-flow "<toolCall>" "<displayString>" [--notify <channel:target>]
 ```
 
-## Uninstall
+---
 
-If installed by linking:
+## What Happens
 
-```bash
-npm unlink -g openclaw-cli
-```
+1. **When OpenClaw detects a dangerous action that it needs to use**
+
+2. It runs:
+
+   ```bash
+   node ./scripts/cli.js approval-flow ...
+   ```
+
+3. The script:
+
+   - Creates an approval session with LoginID Identity Gateway
+   - Generates an approval URL
+
+4. The user is notified:
+
+   - If `--notify` or `LIG_NOTIFY` is set → message is sent (Telegram, Slack, etc.)
+   - If notification fails → browser opens automatically
+
+5. The user:
+
+   - Opens the approval link
+   - Sees the required action
+   - Approves or denies using a **passkey**
+
+6. OpenClaw **waits** until one of these happens:
+
+   - Approved
+   - Denied
+   - Timeout
+
+7. OpenClaw continues based on the result:
+
+   - **Approved** → action is executed
+   - **Denied** → action is ignored 
+   - **Timeout** → action is ignored
 
 ---
 
 ## Environment Variables
 
-The CLI relies on the following environment variables:
+The script relies on the following environment variables:
 
-| Variable            | Required | Description                                                         |
-| ------------------- | -------- | ------------------------------------------------------------------- |
-| `IDGW_BASE_URL`     | No       | Base URL of the Identity Gateway (default: `http://localhost:8090`) |
-| `AGENT_PRIVATE_KEY` | Yes      | PEM-encoded private key used to sign requests                       |
-| `AGENT_KEY_ID`      | Yes      | Key ID associated with the private key                              |
-| `LIG_NOTIFY`        | No       | Default notification channel (`provider:destination`)               |
+| Variable            | Required | Description                                                                                 |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------- |
+| `AGENT_PRIVATE_KEY` | Yes      | PEM-encoded **RSA private key (RSA-PSS SHA-512)** used to sign requests to Identity Gateway |
+| `AGENT_KEY_ID`      | Yes      | Public HTTPS URL where your **corresponding public key is hosted** (used for verification)  |
+| `LIG_NOTIFY`        | No       | Default notification target in format `provider:destination` (used if `--notify` not set)   |
 
 ### Example `.env`
 
 ```env
-IDGW_BASE_URL=https://idgw.example.com
 AGENT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-AGENT_KEY_ID=my-key-id
+AGENT_KEY_ID=https://my-domain/.well-known/agent/public-key
 LIG_NOTIFY=telegram:@mychat
+```
+
+---
+
+## Notifications (OpenClaw)
+
+Optional:
+
+```bash
+--notify <channel:target>
+```
+
+Attempts to use [OpenClaw's message API](https://docs.openclaw.ai/cli/message) to notify the user to open the approval URL.
+
+Examples:
+
+- `telegram:@user`
+- `slack:channel:C123`
+- `whatsapp:+123456789`
+
+If not set or fails → browser opens automatically.
+
+> OpenClaw may not send the `--notify` flag. To ensure that notification is always sent set the `LIG_NOTIFY` environment variable.
+
+---
+
+## Test Notifications
+
+Manually test to see if notifications is working by using:
+
+```bash
+node ./scripts/cli.js test-notify "Hello" --notify telegram:@user
+```
+
+Or:
+
+```bash
+export LIG_NOTIFY=telegram:@user
+node ./scripts/cli.js test-notify "Hello"
 ```
 
 ---
 
 ## Authentication (HTTP Message Signatures)
 
-This CLI authenticates with Identity Gateway using [HTTP Message Signatures](https://www.rfc-editor.org/rfc/rfc9421.pdf).
+This script authenticates with Identity Gateway using [HTTP Message Signatures](https://www.rfc-editor.org/rfc/rfc9421.pdf).
 
 To use it, you must generate an **RSA-PSS SHA-512 key pair** (only supported) and configure both your private key and a public key endpoint.
 
@@ -88,15 +142,13 @@ Set your private key as an environment variable. Make sure it is all in one line
 AGENT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 ```
 
-This key is used by the CLI to sign outgoing requests.
+This key is used by the script to sign and create a identity session.
 
 3. **Host your public key**
 
 You must expose your **public key via an HTTP endpoint** that returns the PEM-encoded public key.
 
 This endpoint must be publicly accessible (HTTPS) by the Identity Gateway service.
-
-**DEV NOTE**: A local HTTP service can be used if running Identity Gateway locally.
 
 Example:
 
@@ -138,7 +190,7 @@ Set `AGENT_KEY_ID` to the **URL of your public key endpoint**:
 AGENT_KEY_ID=https://your-domain.com/.well-known/agent-key
 ```
 
-When your CLI makes a request:
+When the script makes a request:
 
 1. It signs the request using `AGENT_PRIVATE_KEY`
 2. Identity Gateway reads `AGENT_KEY_ID`
@@ -149,167 +201,19 @@ This ensures that **only your agent can create approval sessions.**
 
 ---
 
-## Notifications (OpenClaw)
-
-This CLI integrates with OpenClaw’s message API to send approval notifications.
-
-Documentation:
-
-- [https://docs.openclaw.ai/cli/message](https://docs.openclaw.ai/cli/message)
-- [https://docs.openclaw.ai/channels](https://docs.openclaw.ai/channels)
-
-### Important
-
-- Notifications are best-effort
-- If notification fails, the CLI falls back to opening the browser
-- You must configure your OpenClaw channel correctly before notifications will work
-
-### Format
-
-```bash
---notify <provider:destination>
-```
-
-Examples:
-
-```bash
-telegram:@username
-slack:channel:C123456
-whatsapp:+123456789
-```
-
----
-
-## Commands
-
-### create-session
-
-Creates an approval session and returns a URL.
-
-```bash
-lig create-session "<toolCall>" "<displayString>"
-```
-
-Example:
-
-```bash
-lig create-session "rm -rf /" "Delete all files"
-```
-
----
-
-### wait-for-session
-
-Waits for a session to complete. Optionally sends a notification.
-
-```bash
-lig wait-for-session <sessionId> [approvalUrl] --notify <provider:destination>
-```
-
-Example:
-
-```bash
-lig wait-for-session abc123 https://approval.url \
-  --notify telegram:@mychat
-```
-
----
-
-### approval-flow
-
-Runs the full flow:
-
-1. Create session
-2. Send notification (optional)
-3. Wait for approval
-
-```bash
-lig approval-flow "<toolCall>" "<displayString>" --notify <provider:destination>
-```
-
-Example:
-
-```bash
-lig approval-flow \
-  "terraform apply" \
-  "Apply infrastructure changes" \
-  --notify slack:channel:C123456
-```
-
----
-
-### test-notify
-
-Sends a test message using OpenClaw.
-
-```bash
-lig test-notify "<message>" --notify <provider:destination>
-```
-
-Example:
-
-```bash
-lig test-notify "Hello from CLI" \
-  --notify telegram:@mychat
-```
-
-If `--notify` is not provided, the CLI will use `LIG_NOTIFY`.
-
----
-
-## How Notifications Work
-
-The CLI invokes OpenClaw internally:
-
-```bash
-openclaw message send --channel <channel> --message <message> --target <target>
-```
-
-During approval:
-
-- If `notify` is set, a notification is sent
-- If notification fails, the CLI opens the approval URL in the browser
-- It is recommended to verify your setup using `test-notify`
-
----
-
-## How It Works
-
-1. approvalInit
-   Sends a GraphQL request to IDGW and returns `approvalUrl` and `sessionId`
-
-2. approvalWait
-   Optionally sends a notification, then waits for an SSE event (`session`)
-
-3. approvalFlow
-   Combines initialization and waiting into a single command
-
----
-
 ## Troubleshooting
 
 ### Notifications not working
 
-- Ensure OpenClaw is installed:
+Make sure that your channel is configured and working correctly.
 
-  ```bash
-  openclaw --version
-  ```
-- Verify your channel configuration:
-  [https://docs.openclaw.ai/channels](https://docs.openclaw.ai/channels)
-- Test manually:
+Then you can test the integration with:
 
-  ```bash
-  openclaw message send --channel telegram --message "test" --target=@MyBot
-  ```
-- Use:
+```bash
+node ./scripts/cli.js test-notify "test" --notify telegram:@user
+```
 
-  ```bash
-  export LIG_NOTIFY="telegram:@MyBot"
-  lig test-notify "test"
-  ```
-
----
+https://docs.openclaw.ai/channels
 
 ## License
 
