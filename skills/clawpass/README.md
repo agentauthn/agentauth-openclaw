@@ -12,6 +12,71 @@ OpenClaw will automatically use this when it detects a **high-risk action**, suc
 
 ---
 
+## Installation
+
+You can install this skill into OpenClaw using the provided script or manually.
+
+### Option 1 — Using the install script (recommended)
+
+```bash
+npm run install:local
+```
+
+Optionally, you can pass a custom OpenClaw directory:
+
+```bash
+npm run install:local -- /path/to/openclaw
+```
+
+If no path is provided, the script will use:
+
+```bash
+~/.openclaw
+```
+
+The script will:
+
+- Build the project
+- Package the skill
+- Install it into your OpenClaw `skills` directory
+
+### Option 2 — Manual installation
+
+If you prefer to install manually:
+
+```bash
+npm install
+npm run build
+```
+
+If you prefer to install manually:
+
+1. **Build the project**
+
+```bash
+npm install
+npm run build
+```
+
+2. **Package and install the skill**
+
+```bash
+mkdir loginid-identity-gateway
+cp SKILL.md loginid-identity-gateway/
+cp -r scripts loginid-identity-gateway/
+mv loginid-identity-gateway ~/.openclaw/skills/
+```
+
+If using a custom OpenClaw directory:
+
+```bash
+mv loginid-identity-gateway <openclaw-directory>/skills/
+```
+
+Restart OpenClaws gateway and it will automatically detect and use the skill when needed.
+
+---
+
 ## Command Used by OpenClaw
 
 ```bash
