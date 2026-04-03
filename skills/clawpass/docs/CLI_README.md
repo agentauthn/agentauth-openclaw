@@ -45,6 +45,8 @@ npm unlink -g openclaw-cli
 
 ## Environment Variables
 
+This skill requires the following values to be provided via `OpenClaw config` (`~/.openclaw/openclaw.json`).
+
 | Variable            | Required | Description                                                                                 |
 | ------------------- | -------- | ------------------------------------------------------------------------------------------- |
 | `IDGW_BASE_URL`     | No       | Base URL of the Identity Gateway (default: `http://localhost:8090`) |
@@ -52,13 +54,23 @@ npm unlink -g openclaw-cli
 | `LIG_AGENT_KEY_ID`      | Yes      | Public HTTPS URL where your **corresponding public key is hosted** (used for verification)  |
 | `LIG_NOTIFY`        | No       | Default notification target in format `provider:destination` (used if `--notify` not set)   |
 
-### Example `.env`
+### Example
 
-```env
-IDGW_BASE_URL=https://idgw.example.com
-LIG_AGENT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-LIG_AGENT_KEY_ID=my-key-id
-LIG_NOTIFY=telegram:@mychat
+```json
+{
+  "skills": {
+    "entries": {
+      "loginid-identity-gateway": {
+        "enabled": true,
+        "env": {
+          "LIG_AGENT_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+          "LIG_AGENT_KEY_ID": "https://your-domain/.well-known/agent-key",
+          "LIG_NOTIFY": "slack:user:UXXXXXXX"
+        }
+      }
+    }
+  }
+}
 ```
 
 ---

@@ -80,7 +80,7 @@ Restart OpenClaws gateway and it will automatically detect and use the skill whe
 ## Command Used by OpenClaw
 
 ```bash
-node ./scripts/cli.js approval-flow "<toolCall>" "<displayString>" [--notify <channel:target>]
+node ./scripts/cli.cjs approval-flow "<toolCall>" "<displayString>" [--notify <channel:target>]
 ```
 
 ---
@@ -92,7 +92,7 @@ node ./scripts/cli.js approval-flow "<toolCall>" "<displayString>" [--notify <ch
 2. It runs:
 
    ```bash
-   node ./scripts/cli.js approval-flow ...
+   node ./scripts/cli.cjs approval-flow ...
    ```
 
 3. The script:
@@ -127,7 +127,7 @@ node ./scripts/cli.js approval-flow "<toolCall>" "<displayString>" [--notify <ch
 
 ## Environment Variables
 
-The script relies on the following environment variables:
+This skill requires the following values to be provided via `OpenClaw config` (`~/.openclaw/openclaw.json`).
 
 | Variable            | Required | Description                                                                                 |
 | ------------------- | -------- | ------------------------------------------------------------------------------------------- |
@@ -135,12 +135,23 @@ The script relies on the following environment variables:
 | `LIG_AGENT_KEY_ID`      | Yes      | Public HTTPS URL where your **corresponding public key is hosted** (used for verification)  |
 | `LIG_NOTIFY`        | No       | Default notification target in format `provider:destination` (used if `--notify` not set)   |
 
-### Example `.env`
+### Example
 
-```env
-LIG_AGENT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-LIG_AGENT_KEY_ID=https://my-domain/.well-known/agent/public-key
-LIG_NOTIFY=telegram:@mychat
+```json
+{
+  "skills": {
+    "entries": {
+      "loginid-identity-gateway": {
+        "enabled": true,
+        "env": {
+          "LIG_AGENT_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+          "LIG_AGENT_KEY_ID": "https://your-domain/.well-known/agent-key",
+          "LIG_NOTIFY": "slack:user:UXXXXXXX"
+        }
+      }
+    }
+  }
+}
 ```
 
 ---
@@ -172,14 +183,14 @@ If not set or fails → browser opens automatically.
 Manually test to see if notifications is working by using:
 
 ```bash
-node ./scripts/cli.js test-notify "Hello" --notify telegram:@user
+node ./scripts/cli.cjs test-notify "Hello" --notify telegram:@user
 ```
 
 Or:
 
 ```bash
 export LIG_NOTIFY=telegram:@user
-node ./scripts/cli.js test-notify "Hello"
+node ./scripts/cli.cjs test-notify "Hello"
 ```
 
 ---
@@ -275,7 +286,7 @@ Make sure that your channel is configured and working correctly.
 Then you can test the integration with:
 
 ```bash
-node ./scripts/cli.js test-notify "test" --notify telegram:@user
+node ./scripts/cli.cjs test-notify "test" --notify telegram:@user
 ```
 
 https://docs.openclaw.ai/channels

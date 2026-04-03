@@ -2,7 +2,7 @@ import { build } from 'esbuild';
 
 await build({
   entryPoints: ['src/index.mjs'],
-  outfile: 'scripts/cli.js',
+  outfile: 'scripts/cli.cjs',
   bundle: true,
   format: 'cjs',
   platform: 'node',
