@@ -3,7 +3,7 @@ name: request-approval
 homepage: https://loginid.io
 description: Require identity verification and human approval through loginid-identity-gateway before executing dangerous or destructive operations
 compatibility: Requires Preloop MCP loginid-identity-gateway (`./scripts/cli.cjs`)
-metadata: { "openclaw": { "requires": { "env": ["LIG_AGENT_PRIVATE_KEY", "LIG_AGENT_KEY_ID", "LIG_NOTIFY"] } } }
+metadata: { "openclaw": { "requires": { "env": ["LIG_AGENT_PRIVATE_KEY", "LIG_AGENT_KEY_ID"] } } }
 ---
 
 # Request Approval + Identity Verification Skill
