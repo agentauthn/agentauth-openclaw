@@ -1,10 +1,9 @@
 ---
 name: request-approval
+homepage: https://loginid.io
 description: Require identity verification and human approval through loginid-identity-gateway before executing dangerous or destructive operations
-compatibility: Requires Preloop MCP loginid-identity-gateway (`./scripts/cli.js`)
-metadata:
-author: LoginID
-version: "0.0.6"
+compatibility: Requires Preloop MCP loginid-identity-gateway (`./scripts/cli.cjs`)
+metadata: { "openclaw": { "requires": { "env": ["LIG_AGENT_PRIVATE_KEY", "LIG_AGENT_KEY_ID"] } } }
 ---
 
 # Request Approval + Identity Verification Skill
@@ -40,7 +39,7 @@ If unsure → **assume dangerous**
 Use the **one command**:
 
 ```bash
-./scripts/cli.js approval-flow <toolCall> <displayString> [--notify <channel>:<target>]
+./scripts/cli.cjs approval-flow <toolCall> <displayString> [--notify <channel>:<target>]
 ````
 
 ---
@@ -108,7 +107,7 @@ The process is only complete when:
 
 ### Execution Responsibility
 
-`./scripts/cli.js approval-flow` does **not** execute the `toolCall`.
+`./scripts/cli.cjs approval-flow` does **not** execute the `toolCall`.
 
 It only:
 
@@ -174,7 +173,7 @@ These are **side effects only**, not completion indicators.
 * NEVER execute dangerous commands without approval
 * NEVER skip identity verification
 * NEVER ask the user for approval in chat
-* ALWAYS use `./scripts/cli.js approval-flow`
+* ALWAYS use `./scripts/cli.cjs approval-flow`
 * ALWAYS wait for the `approval-flow` command to finish
 * NEVER treat notification sent or browser opened as completion
 * NEVER retry silently after failure
@@ -214,7 +213,7 @@ If YES → follow full approval flow
 
 ## 🛡️ Principle
 
-**Dual control system handled by `./scripts/cli.js`:**
+**Dual control system handled by `./scripts/cli.cjs`:**
 
 * Identity verification
 * Human approval
@@ -224,4 +223,4 @@ Both are required before execution.
 ---
 
 **Remember:**
-When in doubt → STOP and use `./scripts/cli.js approval-flow`
+When in doubt → STOP and use `./scripts/cli.cjs approval-flow`
