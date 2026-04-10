@@ -1,43 +1,19 @@
----
-# CHANGED: name from "request-approval" to "agentauth" — new brand name, all lowercase, one word.
-# This is the secondary ranking signal in ClawHub's vector search.
 name: agentauth
-# CHANGED: homepage from loginid.io to agentauth domain — shows in ClawHub UI, signals legitimacy.
-# Update this once the actual domain is live.
 homepage: https://agentauth.id 
-# CHANGED: description completely rewritten for ClawHub semantic search optimization.
-# This is the PRIMARY ranking signal — ClawHub embeds this field with highest weight.
-# Targets three semantic clusters:
-#   1. Consent/approval actions: "approve," "consent," "human-in-the-loop," "authorize"
-#   2. FIDO2/passkey technology: "passkey," "FIDO2," "WebAuthn," "biometric," "cryptographic"
-#   3. Agent threat scenarios: "prompt injection," "unauthorized," "destructive," "sensitive"
-# Also includes "Use when" trigger pattern — helps OpenClaw runtime decide when to activate the skill.
-# Sweet spot: 80-200 chars for the embedding model. This is ~290 chars but justified by the
-# dual-duty requirement (search ranking + runtime activation).
-# OLD: "Require identity verification and human approval through loginid-identity-gateway before executing dangerous or destructive operations"
 description: Require user-initiated biometric passkey approval before your OpenClaw agent deletes files, sends emails, makes purchases, or modifies system config. Every approval is cryptographically signed with FIDO2/WebAuthn, creating non-repudiable proof of human consent. Blocks prompt injection bypass and unauthorized agent actions. Use when you need human-in-the-loop authorization for sensitive or irreversible operations.
-# CHANGED: compatibility updated to reflect new brand name
+
 compatibility: Requires agentauth CLI (`./scripts/cli.cjs`)
-# ADDED: explicit env var declarations prevent "hidden or misleading execution" flag during ClawHub review.
-# Every required env var must be declared in frontmatter.
+
 metadata: { "openclaw": { "requires": { "env": ["AGENTAUTH_AGENT_PRIVATE_KEY", "AGENTAUTH_AGENT_KEY_ID"] } } }
 ---
 
 # agentauth — Human Consent Gate for AI Agents
-
-<!-- ADDED: "Why This Exists" section. Names CVE-2026-25253 and ClawHavoc directly.
-     Purpose: anyone searching for security solutions after those incidents gets semantic proximity.
-     These are the two most-discussed security events in OpenClaw — they're search magnets. -->
 
 ## Why This Exists
 
 OpenClaw's gateway uses bearer tokens stored in `.env` files. CVE-2026-25253 proved these tokens can be exfiltrated with one click. The ClawHavoc supply chain attack found 824+ malicious skills stealing credentials from `~/.clawdbot/.env`. Exec approvals are the lock on the front door. agentauth is the lock on the safe.
 
 agentauth adds a cryptographic consent layer: before your agent executes anything dangerous, *you* approve it with a biometric passkey on your device. The approval is signed with FIDO2/WebAuthn. It can't be faked, replayed, or stolen.
-
-<!-- ADDED: "What This Prevents" section. Lists specific scary scenarios in plain language.
-     Purpose: matches how people actually type search queries — "stop agent from deleting files,"
-     "prevent agent sending emails without permission." Each line is a semantic search magnet. -->
 
 ## What This Prevents
 
@@ -76,8 +52,6 @@ If unsure → **assume dangerous**
 ---
 
 ## Required Flow for Dangerous Actions
-
-<!-- CHANGED: CLI path updated from ./scripts/cli.cjs approval-flow to use agentauth branding -->
 
 Use the **one command**:
 
@@ -245,10 +219,6 @@ If YES → follow full approval flow
 
 ---
 
-<!-- ADDED: "How This Compares" section. Names competitors directly.
-     Purpose: pulls the SKILL.md embedding vector closer to queries about competitors.
-     "alternative to clawgate" or "better than agent-passport" will get semantic hits.
-     Also communicates real differentiation to humans reading the listing. -->
 
 ## How This Compares
 
@@ -274,9 +244,6 @@ Exec approvals are the lock on the front door. agentauth is the lock on the safe
 Both are required before execution. This is not a limitation — it is the feature.
 
 ---
-
-<!-- ADDED: Example interaction section. Adds semantic surface for natural-language queries
-     like "approve email deletion" and demonstrates prompt injection resistance. -->
 
 ## Example Interaction
 
@@ -307,17 +274,11 @@ I've sent a new approval request to your device.
 
 ---
 
-## Setup and Installation
-
-For automated installation instructions (agent-readable), see `agent-skills.md`.
-For the authorization block to add to your `agent.md`, see `references/agent-setup.md`.
-For multi-user and team configuration, see `references/multi-user.md`.
 
 ---
-
+<!-- 
 ## Docs and Support
-
-<!-- CHANGED: URLs updated for agentauth branding. These URLs are NOT LIVE YET 
+URLs updated for agentauth branding. These URLs are NOT LIVE YET 
 Full documentation: https://agentauth.id
 Dashboard: https://dashboard.agentauth.id
 Support: support@agentauth.id
