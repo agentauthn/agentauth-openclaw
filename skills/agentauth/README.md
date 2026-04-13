@@ -1,4 +1,4 @@
-# ClawPass (Approval Flow for OpenClaw)
+# agentauth (Approval Flow for OpenClaw)
 
 This skill adds **human approval + identity verification** before OpenClaw performs dangerous actions.
 

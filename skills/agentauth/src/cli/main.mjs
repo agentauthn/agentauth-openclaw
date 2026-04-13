@@ -21,7 +21,7 @@ import { config } from "../utils/env.mjs";
 const program = new Command();
 
 program
-  .name("lig")
+  .name("agentauth")
   .description("A CLI tool for LoginID's Identity Gateway with OpenClaw")
   .version("0.0.1");
 
@@ -56,7 +56,7 @@ program
     try {
       const command = getCommand("wait-for-session");
       const { notify } = options;
-      const result = await command.execute({ sessionId, approvalUrl, notify: notify || config.ligNotify });
+      const result = await command.execute({ sessionId, approvalUrl, notify: notify || config.notify });
       if (result) {
         console.log(result);
       }
@@ -79,7 +79,7 @@ program
     try {
       const command = getCommand("approval-flow");
       const { notify } = options;
-      const result = await command.execute({ toolCall, displayString, notify: notify || config.ligNotify });
+      const result = await command.execute({ toolCall, displayString, notify: notify || config.notify });
       if (result) {
         console.log(JSON.stringify(result));
       }
@@ -100,10 +100,10 @@ program
   .action(async (message, options) => {
     try {
       const { notify } = options;
-      const notifyValue = notify || config.ligNotify;
+      const notifyValue = notify || config.notify;
       if (!notifyValue) {
         throw new Error(
-          "missing required option '--notify <provider:destination>' or LIG_NOTIFY environment variable."
+          "missing required option '--notify <provider:destination>' or AGENTAUTH_NOTIFY environment variable."
         );
       }
       const command = getCommand("test-notify");

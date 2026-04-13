@@ -27,26 +27,34 @@ class Config {
     return this._env.IDGW_BASE_URL || "http://localhost:8090";
   }
 
-  get ligNotify() {
-    return this._env.LIG_NOTIFY;
+  get notify() {
+    return this._env.AGENTAUTH_NOTIFY;
+  }
+
+  get apiKey() {
+    const apiKey = this._env.AGENTAUTH_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "Missing required environment variable: AGENTAUTH_API_KEY. " +
+          "Set it in your environment or .env file."
+      );
+    }
+    return apiKey;
   }
 
   getAgentPrivateKey() {
-    const pem = this._env.LIG_AGENT_PRIVATE_KEY;
+    const pem = this._env.AGENTAUTH_AGENT_PRIVATE_KEY;
     if (!pem) {
-      throw new Error(
-        "Missing required environment variable: LIG_AGENT_PRIVATE_KEY. " +
-          "Set it in your environment or .env file to enable request signing."
-      );
+      return;
     }
     return pem.replace(/\\n/g, "\n");
   }
 
   getAgentKeyId() {
-    const keyId = this._env.LIG_AGENT_KEY_ID;
+    const keyId = this._env.AGENTAUTH_AGENT_KEY_ID;
     if (!keyId) {
       throw new Error(
-        "Missing required environment variable: LIG_AGENT_KEY_ID. " +
+        "Missing required environment variable: AGENTAUTH_AGENT_KEY_ID. " +
           "Set it in your environment or .env file to enable request signing."
       );
     }

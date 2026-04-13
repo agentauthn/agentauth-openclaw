@@ -15,47 +15,20 @@
  */
 
 import open from "open";
-import { randomUUID } from "crypto";
-import { APPROVAL_INIT_QUERY } from "./queries.mjs";
-import { base64UrlEncode } from "../../utils/crypto.mjs";
-import { parseNotify } from "../../utils/notifications.mjs";
+import { base64UrlEncode } from "../utils/crypto.mjs";
+import { parseNotify } from "../utils/notifications.mjs";
 
 export class IdentityGateWay {
-  #httpClient;
-  #sseClient;
+  #loginIdService;
   #openClawService;
-  #gqlUrl = ""
-  #eventsUrl = ""
 
-  constructor(baseUrl, httpClient, sseClient, openClawService) {
-    this.#httpClient = httpClient;
-    this.#sseClient = sseClient;
+  constructor({ loginIdService, openClawService }) {
+    this.#loginIdService = loginIdService;
     this.#openClawService = openClawService;
-    this.#gqlUrl = baseUrl + "/graphql";
-    this.#eventsUrl = baseUrl + "/events";
   }
 
   async approvalInit(toolCall, displayString) {
-    const requestPayload = {
-      operationName: "approvalInit",
-      query: APPROVAL_INIT_QUERY,
-      variables: {
-        //NOTE: remove after
-        callbackUri: "https://localhost:3000",
-        permissions: [{
-          id: randomUUID(),
-          title: toolCall,
-          description: displayString,
-        }]
-      }
-    };
-
-    const { data } = await this.#httpClient.post(this.#gqlUrl, requestPayload);
-    const result = data?.approvalInit;
-
-    if (!result) {
-      throw new Error("Missing response data at `approvalInit");
-    }
+    const result = await this.#loginIdService.approvalInit(toolCall, displayString);
 
     const { approvalUrl, ...rest } = result;
     const { sessionId } = rest;
@@ -68,7 +41,7 @@ export class IdentityGateWay {
 
     url.searchParams.set("d", encoded);
 
-    return { approvalUrl: url, sessionId };
+    return { approvalUrl: url.toString(), sessionId };
   }
 
   async approvalWait(sessionId, approvalUrl, { notify } = {}) {
@@ -90,16 +63,12 @@ export class IdentityGateWay {
       }
     }
 
-    const url = `${this.#eventsUrl}?sessionId=${sessionId}`;
-    const eventData = await this.#sseClient.waitForEvent(
-      url,
-      { eventName: "session", timeout: 60_000 * 5 }
-    );
+    const { status } = await this.#loginIdService.approvalWait(sessionId);
 
-    if (eventData?.status?.toLowerCase() === "approved") {
-      return JSON.stringify({ status: "complete" });
+    if (status === "approved") {
+      return JSON.stringify({ status: "approved" });
     } else {
-      throw new Error(`Session ended with status: ${eventData?.status || 'unknown'}`);
+      return JSON.stringify({ status: "deny" });
     }
   }
 

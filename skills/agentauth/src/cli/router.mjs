@@ -15,7 +15,7 @@
  */
 
 import { CreateSessionCommand } from './commands/CreateSessionCommand.mjs';
-import { IdentityGateWay } from '../services/idgw/index.mjs';
+import { IdentityGateWay } from '../services/IdentityGateWay.mjs';
 import { WaitForSessionCommand } from './commands/WaitForSessionCommand.mjs';
 import { ApprovalFlowCommand } from './commands/ApprovalFlowCommand.mjs';
 import { TestNotifyCommand } from './commands/TestNotifyCommand.mjs';
@@ -24,6 +24,7 @@ import { AgentSigner } from '../utils/AgentSigner.mjs';
 import { SseClient } from '../services/SseClient.mjs';
 import { config } from '../utils/env.mjs';
 import { OpenClawService } from '../services/OpenClawService.mjs';
+import { LoginIDService } from '../services/loginid/index.mjs';
 
 const openClawService = new OpenClawService();
 
@@ -33,10 +34,28 @@ const getIdgwService = () => {
     return idgwService;
   }
 
-  const signer = new AgentSigner(config.getAgentPrivateKey(), config.getAgentKeyId());
+  const apiKey = config.apiKey;
+  const keyId = config.getAgentKeyId();
+
+  const privateKey = config.getAgentPrivateKey();
+  let signer;
+  if (privateKey) {
+    signer = new AgentSigner(privateKey, keyId);
+  }
+
   const httpClient = new HttpClient({ signer });
   const sseClient = new SseClient();
-  idgwService = new IdentityGateWay(config.idgwBaseUrl, httpClient, sseClient, openClawService);
+  const loginIdService = new LoginIDService({
+    baseUrl: config.idgwBaseUrl,
+    httpClient,
+    sseClient,
+    credentials: { apiKey, keyId },
+  });
+
+  idgwService = new IdentityGateWay({
+    loginIdService,
+    openClawService,
+  });
   return idgwService;
 };
 
