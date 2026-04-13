@@ -97,9 +97,9 @@ export class IdentityGateWay {
     );
 
     if (eventData?.status?.toLowerCase() === "approved") {
-      return JSON.stringify({ status: "complete" });
+      return JSON.stringify({ status: "approved" });
     } else {
-      throw new Error(`Session ended with status: ${eventData?.status || 'unknown'}`);
+      return JSON.stringify({ status: "deny" });
     }
   }
 
