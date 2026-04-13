@@ -33,10 +33,24 @@ const getIdgwService = () => {
     return idgwService;
   }
 
-  const signer = new AgentSigner(config.getAgentPrivateKey(), config.getAgentKeyId());
+  const apiKey = config.apiKey;
+  const keyId = config.getAgentKeyId();
+
+  const privateKey = config.getAgentPrivateKey();
+  let signer;
+  if (privateKey) {
+    signer = new AgentSigner(privateKey, keyId);
+  }
+
   const httpClient = new HttpClient({ signer });
   const sseClient = new SseClient();
-  idgwService = new IdentityGateWay(config.idgwBaseUrl, httpClient, sseClient, openClawService);
+  idgwService = new IdentityGateWay({
+    baseUrl: config.idgwBaseUrl,
+    httpClient,
+    sseClient,
+    openClawService,
+    credentials: { apiKey, keyId },
+  });
   return idgwService;
 };
 

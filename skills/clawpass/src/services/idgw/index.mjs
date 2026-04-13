@@ -26,13 +26,17 @@ export class IdentityGateWay {
   #openClawService;
   #gqlUrl = ""
   #eventsUrl = ""
+  #apiKey;
+  #keyId;
 
-  constructor(baseUrl, httpClient, sseClient, openClawService) {
+  constructor({ baseUrl, httpClient, sseClient, openClawService, credentials }) {
     this.#httpClient = httpClient;
     this.#sseClient = sseClient;
     this.#openClawService = openClawService;
     this.#gqlUrl = baseUrl + "/graphql";
     this.#eventsUrl = baseUrl + "/events";
+    this.#apiKey = credentials?.apiKey;
+    this.#keyId = credentials?.keyId;
   }
 
   async approvalInit(toolCall, displayString) {
@@ -50,7 +54,15 @@ export class IdentityGateWay {
       }
     };
 
-    const { data } = await this.#httpClient.post(this.#gqlUrl, requestPayload);
+    const headers = {};
+    if (this.#apiKey) {
+      headers["X-Api-Key"] = this.#apiKey;
+    }
+    if (this.#keyId) {
+      headers["X-Api-Key-Id"] = this.#keyId;
+    }
+
+    const { data } = await this.#httpClient.post(this.#gqlUrl, requestPayload, { headers });
     const result = data?.approvalInit;
 
     if (!result) {

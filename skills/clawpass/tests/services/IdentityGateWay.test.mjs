@@ -26,10 +26,13 @@ describe('IdentityGateWay', () => {
       notify: jest.fn(),
     };
     idgw = new IdentityGateWay(
-      'http://localhost:8090',
-      mockHttpClient,
-      mockSseClient,
-      mockOpenClawService
+      { 
+        baseUrl: 'http://localhost:8090',
+        httpClient: mockHttpClient,
+        sseClient: mockSseClient,
+        openClawService: mockOpenClawService,
+        credentials: { apiKey: "key_abc", keyId: "abc123" },
+      },
     );
     open.mockClear();
   });
@@ -49,7 +52,16 @@ describe('IdentityGateWay', () => {
 
       const result = await idgw.approvalInit('tool-call', 'display-string');
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('http://localhost:8090/graphql', expect.any(Object));
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        'http://localhost:8090/graphql',
+        expect.any(Object),
+        {
+          headers: {
+            'X-Api-Key': 'key_abc',
+            'X-Api-Key-Id': 'abc123',
+          },
+        }
+      );
       expect(result.sessionId).toBe('123');
       expect(result.approvalUrl).toBeInstanceOf(URL);
 
@@ -84,7 +96,7 @@ describe('IdentityGateWay', () => {
         `http://localhost:8090/events?sessionId=${sessionId}`,
         { eventName: 'session', timeout: 300000 }
       );
-      expect(result).toBe(JSON.stringify({ status: 'complete' }));
+      expect(result).toBe(JSON.stringify({ status: 'approved' }));
     });
 
     it('should open browser if notification fails', async () => {
@@ -106,14 +118,20 @@ describe('IdentityGateWay', () => {
       expect(open).not.toHaveBeenCalled();
     });
 
-    it('should throw error for non-approved status', async () => {
+    it('should return deny if event return denied', async () => {
       mockSseClient.waitForEvent.mockResolvedValue({ status: 'denied' });
-      await expect(idgw.approvalWait(sessionId, approvalUrl)).rejects.toThrow('Session ended with status: denied');
+
+      const result = await idgw.approvalWait(sessionId, approvalUrl);
+
+      expect(result).toBe(JSON.stringify({ status: 'deny' }));
     });
 
-    it('should throw error for unknown status', async () => {
+    it('should return deny if event return is unknown', async () => {
       mockSseClient.waitForEvent.mockResolvedValue({ some_other_prop: 'value' });
-      await expect(idgw.approvalWait(sessionId, approvalUrl)).rejects.toThrow('Session ended with status: unknown');
+
+      const result = await idgw.approvalWait(sessionId, approvalUrl);
+
+      expect(result).toBe(JSON.stringify({ status: 'deny' }));
     });
   });
 
