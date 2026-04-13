@@ -15,59 +15,20 @@
  */
 
 import open from "open";
-import { randomUUID } from "crypto";
-import { APPROVAL_INIT_QUERY } from "./queries.mjs";
-import { base64UrlEncode } from "../../utils/crypto.mjs";
-import { parseNotify } from "../../utils/notifications.mjs";
+import { base64UrlEncode } from "../utils/crypto.mjs";
+import { parseNotify } from "../utils/notifications.mjs";
 
 export class IdentityGateWay {
-  #httpClient;
-  #sseClient;
+  #loginIdService;
   #openClawService;
-  #gqlUrl = ""
-  #eventsUrl = ""
-  #apiKey;
-  #keyId;
 
-  constructor({ baseUrl, httpClient, sseClient, openClawService, credentials }) {
-    this.#httpClient = httpClient;
-    this.#sseClient = sseClient;
+  constructor({ loginIdService, openClawService }) {
+    this.#loginIdService = loginIdService;
     this.#openClawService = openClawService;
-    this.#gqlUrl = baseUrl + "/graphql";
-    this.#eventsUrl = baseUrl + "/events";
-    this.#apiKey = credentials?.apiKey;
-    this.#keyId = credentials?.keyId;
   }
 
   async approvalInit(toolCall, displayString) {
-    const requestPayload = {
-      operationName: "approvalInit",
-      query: APPROVAL_INIT_QUERY,
-      variables: {
-        //NOTE: remove after
-        callbackUri: "https://localhost:3000",
-        permissions: [{
-          id: randomUUID(),
-          title: toolCall,
-          description: displayString,
-        }]
-      }
-    };
-
-    const headers = {};
-    if (this.#apiKey) {
-      headers["X-Api-Key"] = this.#apiKey;
-    }
-    if (this.#keyId) {
-      headers["X-Api-Key-Id"] = this.#keyId;
-    }
-
-    const { data } = await this.#httpClient.post(this.#gqlUrl, requestPayload, { headers });
-    const result = data?.approvalInit;
-
-    if (!result) {
-      throw new Error("Missing response data at `approvalInit");
-    }
+    const result = await this.#loginIdService.approvalInit(toolCall, displayString);
 
     const { approvalUrl, ...rest } = result;
     const { sessionId } = rest;
@@ -102,13 +63,9 @@ export class IdentityGateWay {
       }
     }
 
-    const url = `${this.#eventsUrl}?sessionId=${sessionId}`;
-    const eventData = await this.#sseClient.waitForEvent(
-      url,
-      { eventName: "session", timeout: 60_000 * 5 }
-    );
+    const { status } = await this.#loginIdService.approvalWait(sessionId);
 
-    if (eventData?.status?.toLowerCase() === "approved") {
+    if (status === "approved") {
       return JSON.stringify({ status: "approved" });
     } else {
       return JSON.stringify({ status: "deny" });
