@@ -41,7 +41,7 @@ export class IdentityGateWay {
 
     url.searchParams.set("d", encoded);
 
-    return { approvalUrl: url, sessionId };
+    return { approvalUrl: url.toString(), sessionId };
   }
 
   async approvalWait(sessionId, approvalUrl, { notify } = {}) {

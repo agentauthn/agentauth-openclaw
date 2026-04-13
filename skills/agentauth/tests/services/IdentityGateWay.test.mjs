@@ -42,11 +42,10 @@ describe('IdentityGateWay', () => {
 
       expect(mockLoginIdService.approvalInit).toHaveBeenCalledWith('tool-call', 'display-string');
       expect(result.sessionId).toBe('123');
-      expect(result.approvalUrl).toBeInstanceOf(URL);
 
       const expectedParams = { sessionId: '123', username: 'testuser' };
       const encodedParams = base64UrlEncode(JSON.stringify(expectedParams));
-      expect(result.approvalUrl.searchParams.get('d')).toBe(encodedParams);
+      expect(result.approvalUrl).toBe(`http://example.com/approve?d=${encodedParams}`);
     });
 
     it('should bubble up errors from loginIdService', async () => {

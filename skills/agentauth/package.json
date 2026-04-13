@@ -1,10 +1,10 @@
 {
-  "name": "clawpass-cli",
+  "name": "agentauth-cli",
   "version": "0.1.0",
   "description": "CLI for running approval flows with LoginID Identity Gateway and OpenClaw",
   "type": "commonjs",
   "bin": {
-    "lig": "./src/index.mjs"
+    "agentauth": "./src/index.mjs"
   },
   "scripts": {
     "start": "node ./src/index.mjs",
@@ -20,7 +20,7 @@
     "security",
     "openclaw",
     "loginid",
-    "clawpass"
+    "agentauth"
   ],
   "author": "LoginID Inc.",
   "license": "Apache-2.0",

@@ -1,4 +1,4 @@
-# ClawPass
+# agentauth
 
 An OpenClaw skill for accessing LoginID's Identity Gateway (IDGW).
 

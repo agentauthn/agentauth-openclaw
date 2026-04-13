@@ -21,7 +21,7 @@ import { config } from "../utils/env.mjs";
 const program = new Command();
 
 program
-  .name("lig")
+  .name("agentauth")
   .description("A CLI tool for LoginID's Identity Gateway with OpenClaw")
   .version("0.0.1");
 

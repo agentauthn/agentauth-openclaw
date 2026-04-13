@@ -24,7 +24,7 @@ import { AgentSigner } from '../utils/AgentSigner.mjs';
 import { SseClient } from '../services/SseClient.mjs';
 import { config } from '../utils/env.mjs';
 import { OpenClawService } from '../services/OpenClawService.mjs';
-import { LoginIDService } from '../services/LoginIDService.mjs';
+import { LoginIDService } from '../services/loginid/index.mjs';
 
 const openClawService = new OpenClawService();
 
