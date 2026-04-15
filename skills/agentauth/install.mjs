@@ -17,7 +17,7 @@ const cwd = process.cwd();
 const scriptsDir = path.join(cwd, "scripts");
 const skillFile = path.join(cwd, "SKILL.md");
 
-const gatewayDirName = "loginid-identity-gateway";
+const gatewayDirName = "agentauth";
 const tempDir = path.join(cwd, `.${gatewayDirName}.tmp`);
 
 let openclawDir;
