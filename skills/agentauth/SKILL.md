@@ -1,6 +1,6 @@
 ---
 name: agentauth
-homepage: https://agentauth.id 
+homepage: https://agentauth.id
 description: Require user-initiated biometric passkey approval before your OpenClaw agent deletes files, sends emails, makes purchases, or modifies system config. Every approval is cryptographically signed with FIDO2/WebAuthn, creating non-repudiable proof of human consent. Blocks prompt injection bypass and unauthorized agent actions. Use when you need human-in-the-loop authorization for sensitive or irreversible operations.
 
 compatibility: Requires agentauth CLI (`./scripts/cli.cjs`)
@@ -27,15 +27,6 @@ agentauth adds a cryptographic consent layer: before your agent executes anythin
 
 ---
 
-## The Flow
-
-- Creates an approval session via agentauth
-- Notifies the user (if configured) on their preferred channel
-- Waits for the user to biometrically authenticate via FIDO2 passkey
-- Returns the approval result (does not execute the command)
-
----
-
 ## Dangerous Operations Definition
 
 Treat the following as **dangerous**:
@@ -52,142 +43,107 @@ If unsure → **assume dangerous**
 
 ---
 
-## Required Flow for Dangerous Actions
+## Required Flow for Dangerous Actions: Non-Blocking Approval
 
-Use the **one command**:
+To ensure the main agent remains responsive, sensitive operations MUST be handled by a sub-agent. This creates a safe, non-blocking approval workflow.
+
+**The Main Agent's Role:**
+
+1. **Define the Action**: Determine the exact `toolCall` to be executed and a human-readable `displayString`.
+2. **Construct the Sub-Agent Task**: Create a shell command that encapsulates the entire approval and execution logic. This command will be passed to the sub-agent.
+3. **Spawn the Sub-Agent**: Use `sessions_spawn` to create a sub-agent with the constructed task.
+4. **Yield Immediately**: Call `sessions_yield()` to end your turn and wait for the sub-agent to report back. **Do not** announce the sub-agent's creation to the user; the sub-agent handles notifications.
+
+**The Sub-Agent's Task:**
+
+The sub-agent will execute a script that performs the following steps:
+
+1. **Request Approval**: It calls the `approval-flow` script, which sends a notification to the user (via the `--notify` flag) and waits for their response.
+2. **Receive the Result**: The script captures the JSON output from the approval process (e.g., `{"status": "approved"}`).
+3. **Conditional Execution**:
+    - If the status is `"approved"`, the script executes the original `toolCall`.
+    - If the status is `"deny"` or an error occurs, the script takes no further action.
+4. **Report the Outcome**: The sub-agent's final output will be a simple message indicating the result (e.g., "Action approved and executed successfully." or "Action was not approved. Status: deny"). This result is sent back to the main agent.
+
+---
+
+### Sub-Agent Task Template
+
+Use this template to construct the `task` for `sessions_spawn`. This entire script runs inside the sub-agent.
 
 ```bash
-./scripts/cli.cjs approval-flow <toolCall> <displayString> [--notify <channel>:<target>]
+# 1. Define the sensitive command and its human-readable description.
+TOOL_CALL="<THE_ACTUAL_COMMAND_TO_EXECUTE>"
+DISPLAY_STRING="<Human-readable description of the action>"
+
+# 2. Run the approval flow, notify the user, and capture the JSON result.
+# The script will pause here until the user approves, denies, or the request times out.
+RESULT_JSON=$(./scripts/cli.cjs approval-flow "$TOOL_CALL" "$DISPLAY_STRING" --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>)
+
+# 3. Check the status and execute the command only if approved.
+STATUS=$(echo "$RESULT_JSON" | jq -r .status)
+if [ "$STATUS" = "approved" ]; then
+  # Execute the original command now that approval is confirmed.
+  eval $TOOL_CALL
+  echo "Action approved and executed successfully."
+else
+  # Report that the action was denied or failed.
+  echo "Action was not approved. Status: $STATUS"
+fi
+```
+
+**Placeholder Values:**
+
+- `<THE_ACTUAL_COMMAND_TO_EXECUTE>`: Replace with the exact, dangerous command (e.g., `rm ~/.openclaw/secret.txt`).
+- `<Human-readable description of the action>`: A short string for the user's approval screen.
+- `<CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>`: These are conceptual placeholders. The agent must substitute them with the actual channel and target ID from the current session context to ensure the user is notified correctly.
+
+---
+
+### Main Agent Example Call
+
+This demonstrates how the main agent prepares and spawns the sub-agent.
+
+```
+// 1. Define the variables for the sub-agent's task.
+const dangerous_command = "rm ~/.openclaw/important.txt";
+const display_string = "Delete the important notes file";
+const notification_target = "slack:U12345"; // Example target
+
+// 2. Construct the full task script for the sub-agent.
+const subagent_task = `
+TOOL_CALL="${dangerous_command}"
+DISPLAY_STRING="${display_string}"
+RESULT_JSON=$(./scripts/cli.cjs approval-flow "$TOOL_CALL" "$DISPLAY_STRING" --notify ${notification_target})
+STATUS=$(echo "$RESULT_JSON" | jq -r .status)
+if [ "$STATUS" = "approved" ]; then
+  eval $TOOL_CALL
+  echo "Action approved and executed successfully."
+else
+  echo "Action was not approved. Status: $STATUS"
+fi
+`;
+
+// 3. Spawn the sub-agent to handle the entire flow.
+sessions_spawn({
+  runtime: "subagent",
+  task: subagent_task,
+});
+
+// 4. Yield the turn to wait for the sub-agent's final report.
+sessions_yield();
 ```
 
 ---
 
-### Arguments
+## Hard Rules (Updated for Sub-Agents)
 
-* **`toolCall`**
-  The exact command or tool call that would be executed
-
-* **`displayString`**
-  A concise, human-readable description of the action for the approval UI
-
-* **`--notify` (optional)**
-  Notification destination in the format:
-
-  ```
-  <channel>:<target>
-  ```
-
-  Examples:
-
-  * `telegram:@user`
-  * `slack:channel:C123`
-  * `whatsapp:+123456789`
-
-If a user channel and target are known, include the `--notify` option.
-
----
-
-### Blocking Execution
-
-The `approval-flow` command is **blocking**.
-
-* Wait for the command to fully complete
-* Do not proceed until completion
-* Do not assume success early
-
----
-
-### Completion Rules
-
-The process is only complete when:
-
-* A JSON response indicates completion:
-
-  ```json
-  { "status": "complete" }
-  ```
-
-* OR a final result is returned:
-
-  ```json
-  { "status": "approved" }
-  ```
-
-* OR:
-
-  ```json
-  { "status": "deny" }
-  ```
-
-* OR an error occurs
-
----
-
-### Execution Responsibility
-
-`./scripts/cli.cjs approval-flow` does **not** execute the `toolCall`.
-
-It only:
-
-* Requests approval
-* Waits for the result
-
-After it completes:
-
-* If `{ "status": "approved" }` — execute the original `toolCall`.
-* If denied or an error occurs — do not execute and stop immediately.
-
----
-
-### Important: Intermediate Signals
-
-The following **do NOT mean completion**:
-
-* A notification being sent
-* A browser window opening
-* Any message indicating user interaction has started
-
-These indicate that an action has been triggered, not that the approval flow has finished.
-
-Continue waiting until:
-
-* `"status": "complete"`
-* OR `"status": "approved"`
-* OR an error is returned
-
----
-
-### Notifications
-
-If `--notify` is provided:
-
-* A notification may be sent
-* Format: `<channel>:<target>`
-
-If notification is not provided or fails:
-
-* The system may fall back to opening a browser
-
-The command may output:
-
-* That a notification was sent
-* OR that a browser was opened
-
-These are **side effects only**, not completion indicators.
-
----
-
-## Hard Rules
-
-* NEVER execute dangerous commands without approval
-* NEVER skip identity verification
-* NEVER ask the user for approval in chat — in-chat approval is not cryptographic and can be spoofed by prompt injection
-* ALWAYS use `./scripts/cli.cjs approval-flow`
-* ALWAYS wait for the `approval-flow` command to finish
-* NEVER treat notification sent or browser opened as completion
-* NEVER retry silently after failure
-* ALWAYS stop on denial, timeout, or failure
-* The executed command MUST match the approved command
+- NEVER execute dangerous commands directly in the main agent.
+- ALWAYS delegate the entire approval and execution flow to a sub-agent.
+- NEVER announce the creation of the approval sub-agent. The `--notify` flag is responsible for user communication.
+- ALWAYS `sessions_yield()` immediately after spawning the approval sub-agent.
+- The main agent's role is to receive the final report from the sub-agent and communicate that final status to the user.
+- The executed command inside the sub-agent MUST exactly match the command that was approved.
 
 ---
 
@@ -200,26 +156,23 @@ Ask:
 3. Could this be hard to undo?
 4. Would a human want to explicitly review this before execution?
 
-If YES → follow full approval flow
+If YES → follow the full sub-agent approval flow.
 
 ---
 
 ## If Approval Is Denied
 
-* Stop immediately
-* Inform the user the operation was cancelled
-* Do not execute
+- The sub-agent will report a "deny" status.
+- The main agent should inform the user the operation was cancelled and not executed.
 
 ---
 
 ## If agentauth Fails
 
-* Stop immediately
-* Report failure or timeout
-* Do NOT proceed
+- The sub-agent will report an error status.
+- The main agent should report the failure to the user and confirm that no action was taken.
 
 ---
-
 
 ## How This Compares
 
@@ -239,8 +192,8 @@ Exec approvals are the lock on the front door. agentauth is the lock on the safe
 
 **Dual control system handled by `./scripts/cli.cjs`:**
 
-* Identity verification (FIDO2 passkey biometric)
-* Human approval (explicit consent for a specific action)
+- Identity verification (FIDO2 passkey biometric)
+- Human approval (explicit consent for a specific action)
 
 Both are required before execution. This is not a limitation — it is the feature.
 
@@ -274,9 +227,6 @@ I've sent a new approval request to your device.
 ```
 
 ---
-
-
----
 <!-- 
 ## Docs and Support
 URLs updated for agentauth branding. These URLs are NOT LIVE YET 
@@ -284,7 +234,6 @@ Full documentation: https://agentauth.id
 Dashboard: https://dashboard.agentauth.id
 Support: support@agentauth.id
 -->
----
 
 **Remember:**
-When in doubt → STOP and use `./scripts/cli.cjs approval-flow`
+When in doubt → STOP and use the sub-agent approval flow.
