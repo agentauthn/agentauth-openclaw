@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import { WEBCHAT } from '../../src/utils/notifications.mjs';
 import { base64UrlEncode } from '../../src/utils/crypto.mjs';
 
 const mockOpen = jest.fn();
@@ -82,6 +83,33 @@ describe('IdentityGateWay', () => {
 
       expect(mockOpenClawService.notify).toHaveBeenCalled();
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
+    });
+
+    it('should open browser if notify is only a channel', async () => {
+      mockLoginIdService.approvalWait.mockResolvedValue({ status: 'approved' });
+
+      await idgw.approvalWait(sessionId, approvalUrl, { notify: 'telegram' });
+
+      expect(mockOpenClawService.notify).not.toHaveBeenCalled();
+      expect(open).toHaveBeenCalledWith(approvalUrl.toString());
+    });
+
+    it('should open browser if notify channel is webchat', async () => {
+      mockLoginIdService.approvalWait.mockResolvedValue({ status: 'approved' });
+
+      await idgw.approvalWait(sessionId, approvalUrl, { notify: WEBCHAT });
+
+      expect(open).toHaveBeenCalledWith(approvalUrl.toString());
+      expect(mockOpenClawService.notify).not.toHaveBeenCalled();
+    });
+
+    it('should open browser if notify channel is webchat:', async () => {
+      mockLoginIdService.approvalWait.mockResolvedValue({ status: 'approved' });
+
+      await idgw.approvalWait(sessionId, approvalUrl, { notify: `${WEBCHAT}:` });
+
+      expect(open).toHaveBeenCalledWith(approvalUrl.toString());
+      expect(mockOpenClawService.notify).not.toHaveBeenCalled();
     });
 
     it('should not notify if approvalUrl is not provided', async () => {

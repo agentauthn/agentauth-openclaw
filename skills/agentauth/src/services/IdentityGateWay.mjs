@@ -6,7 +6,7 @@
 
 import open from "open";
 import { base64UrlEncode } from "../utils/crypto.mjs";
-import { WEBUI, parseNotify } from "../utils/notifications.mjs";
+import { WEBCHAT, parseNotify } from "../utils/notifications.mjs";
 
 export class IdentityGateWay {
   #loginIdService;
@@ -39,9 +39,10 @@ export class IdentityGateWay {
       let notificationSent = false;
       if (notify && this.#openClawService) {
         const { channel, target } = parseNotify(notify);
-        if (channel === WEBUI) {
+        if (channel === WEBCHAT) {
           open(approvalUrl.toString());
-        } else {
+          notificationSent = true;
+        } else if (channel && target) {
           const message = `An action requires your approval. Please visit this URL to review: ${approvalUrl.toString()}`;
           notificationSent = this.#openClawService.notify(
             message,
