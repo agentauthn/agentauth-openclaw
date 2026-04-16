@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+export const WEBUI = "webui";
+
 export function parseNotify(notify) {
   if (!notify) {
     return { channel: null, target: null };
