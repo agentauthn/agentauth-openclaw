@@ -66,27 +66,35 @@ export class HttpClient {
       ...rest,
     });
 
-    if (!res.ok) {
-      let errorBody;
-      try {
-        errorBody = await res.json();
-        errorBody = JSON.stringify(errorBody);
-      } catch {
-        errorBody = { message: res.statusText };
-      }
-
-      const message =
-        errorBody?.errors ||
-        errorBody?.message ||
-        `API Error: ${res.status}`;
-
-      throw new Error(message);
-    }
-
     if (res.status === 204) {
       return undefined;
     }
 
-    return res.json();
+    const prefixApiErrorMessage = (message) => `API Error: ${message}`;
+
+    let responseBody;
+    try {
+      responseBody = await res.json();
+    } catch (e) {
+      if (!res.ok) {
+        throw new Error(
+          prefixApiErrorMessage(`${res.status} ${res.statusText}`)
+        );
+      }
+      return undefined;
+    }
+
+    if (responseBody?.errors) {
+      const firstError = responseBody.errors?.[0] || {};
+      const message = firstError.message || JSON.stringify(responseBody.errors);
+      throw new Error(prefixApiErrorMessage(message));
+    }
+
+    if (!res.ok) {
+      const message = responseBody?.message || res.status;
+      throw new Error(prefixApiErrorMessage(message));
+    }
+
+    return responseBody;
   }
 }
