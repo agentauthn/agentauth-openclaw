@@ -1,22 +1,12 @@
 /*
  * Copyright 2026 LoginID Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: MIT-0
  */
 
 import open from "open";
 import { base64UrlEncode } from "../utils/crypto.mjs";
-import { parseNotify } from "../utils/notifications.mjs";
+import { WEBCHAT, parseNotify } from "../utils/notifications.mjs";
 
 export class IdentityGateWay {
   #loginIdService;
@@ -49,12 +39,17 @@ export class IdentityGateWay {
       let notificationSent = false;
       if (notify && this.#openClawService) {
         const { channel, target } = parseNotify(notify);
-        const message = `An action requires your approval. Please visit this URL to review: ${approvalUrl.toString()}`;
-        notificationSent = this.#openClawService.notify(
-          message,
-          channel,
-          target
-        );
+        if (channel === WEBCHAT) {
+          open(approvalUrl.toString());
+          notificationSent = true;
+        } else if (channel && target) {
+          const message = `An action requires your approval. Please visit this URL to review: ${approvalUrl.toString()}`;
+          notificationSent = this.#openClawService.notify(
+            message,
+            channel,
+            target
+          );
+        }
       }
 
       if (!notificationSent) {

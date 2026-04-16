@@ -78,6 +78,7 @@ DISPLAY_STRING="<Human-readable description of the action>"
 
 # 2. Run the approval flow, notify the user, and capture the JSON result.
 # The script will pause here until the user approves, denies, or the request times out.
+# NOTE: The path `./scripts/cli.cjs` refers to the `cli.cjs` script located within *this skill's* directory.
 RESULT_JSON=$(./scripts/cli.cjs approval-flow "$TOOL_CALL" "$DISPLAY_STRING" --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>)
 
 # 3. Check the status and execute the command only if approved.
