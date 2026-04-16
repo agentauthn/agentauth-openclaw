@@ -323,4 +323,4 @@ During approval:
 
 ## License
 
-Apache License 2.0 © LoginID Inc.
+MIT-0 © LoginID Inc.

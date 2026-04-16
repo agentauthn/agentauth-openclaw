@@ -23,7 +23,7 @@
     "agentauth"
   ],
   "author": "LoginID Inc.",
-  "license": "Apache-2.0",
+  "license": "MIT-0",
   "dependencies": {
     "commander": "^14.0.3",
     "dotenv": "^17.3.1",
