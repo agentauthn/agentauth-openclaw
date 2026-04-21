@@ -5,7 +5,7 @@
  */
 
 import { randomUUID } from "crypto";
-import { APPROVAL_INIT_QUERY } from "./queries.mjs";
+import { APPROVAL_INIT_QUERY, CREATE_SESSION_QUERY } from "./queries.mjs";
 
 export class LoginIDService {
   #httpClient;
@@ -22,6 +22,21 @@ export class LoginIDService {
     this.#eventsUrl = baseUrl + "/events";
     this.#apiKey = credentials?.apiKey;
     this.#keyId = credentials?.keyId;
+  }
+
+  async createAuthSession() {
+    const requestPayload = {
+      query: CREATE_SESSION_QUERY,
+    };
+
+    const { data } = await this.#httpClient.post(this.#gqlUrl, requestPayload);
+    const result = data?.createSession;
+
+    if (!result) {
+      throw new Error("Missing response data at `createSession`");
+    }
+
+    return result;
   }
 
   async approvalInit(toolCall, displayString) {
@@ -57,17 +72,11 @@ export class LoginIDService {
     return result;
   }
 
-  async approvalWait(sessionId) {
+  async waitForSession(sessionId) {
     const url = `${this.#eventsUrl}?sessionId=${sessionId}`;
-    const eventData = await this.#sseClient.waitForEvent(
+    return await this.#sseClient.waitForEvent(
       url,
       { eventName: "session", timeout: 60_000 * 5 }
     );
-
-    if (eventData?.status?.toLowerCase() === "approved") {
-      return { status: "approved" };
-    } else {
-      return { status: "deny" };
-    }
   }
 }

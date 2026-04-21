@@ -14,7 +14,7 @@ class Config {
   }
 
   get idgwBaseUrl() {
-    return this._env.IDGW_BASE_URL || "http://localhost:8090";
+    return this._env.IDGW_BASE_URL || "https://agentauth.id/api";
   }
 
   get notify() {

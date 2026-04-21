@@ -8,6 +8,7 @@ import { CreateSessionCommand } from './commands/CreateSessionCommand.mjs';
 import { IdentityGateWay } from '../services/IdentityGateWay.mjs';
 import { WaitForSessionCommand } from './commands/WaitForSessionCommand.mjs';
 import { ApprovalFlowCommand } from './commands/ApprovalFlowCommand.mjs';
+import { AuthFlowCommand } from './commands/AuthFlowCommand.mjs';
 import { TestNotifyCommand } from './commands/TestNotifyCommand.mjs';
 import { HttpClient } from '../services/HttpClient.mjs';
 import { AgentSigner } from '../utils/AgentSigner.mjs';
@@ -51,6 +52,7 @@ const getIdgwService = () => {
 
 const commandFactories = {
   'create-session': () => new CreateSessionCommand(getIdgwService()),
+  'auth-flow': () => new AuthFlowCommand(getIdgwService()),
   'wait-for-session': () => new WaitForSessionCommand(getIdgwService()),
   'approval-flow': () => new ApprovalFlowCommand(getIdgwService()),
   'test-notify': () => new TestNotifyCommand(openClawService),

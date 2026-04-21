@@ -34,6 +34,27 @@ program
   });
 
 program
+  .command("auth-flow")
+  .description("Starts an authentication flow for onboarding and waits for it to complete")
+  .option(
+    "--notify <provider:destination>",
+    "Send notification (e.g. telegram:@mychat, slack:channel:C123, whatsapp:+123...)"
+  )
+  .action(async (options) => {
+    try {
+      const command = getCommand("auth-flow");
+      const { notify } = options;
+      const result = await command.execute({ notify: notify || config.notify });
+      if (result) {
+        console.log(JSON.stringify(result));
+      }
+    } catch (err) {
+      console.error(err.message);
+      process.exit(1);
+    }
+  });
+
+program
   .command("wait-for-session")
   .description("Waits for a session to complete")
   .argument("<sessionId>", "The session ID to wait for")
