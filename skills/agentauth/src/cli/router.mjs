@@ -16,8 +16,10 @@ import { SseClient } from '../services/SseClient.mjs';
 import { config } from '../utils/env.mjs';
 import { OpenClawService } from '../services/OpenClawService.mjs';
 import { LoginIDService } from '../services/loginid/index.mjs';
+import { EnvManager } from '../utils/EnvManager.mjs';
 
 const openClawService = new OpenClawService();
+const envManager = new EnvManager({ openClawDir: config.openClawDir });
 
 let idgwService;
 const getIdgwService = () => {
@@ -46,6 +48,7 @@ const getIdgwService = () => {
   idgwService = new IdentityGateWay({
     loginIdService,
     openClawService,
+    envManager,
   });
   return idgwService;
 };

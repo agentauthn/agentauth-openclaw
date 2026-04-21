@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT-0
  */
 
+import os from "os";
+import path from "path";
 import { config as loadDotenv } from "dotenv";
 
 loadDotenv({ quiet: true });
@@ -11,6 +13,10 @@ loadDotenv({ quiet: true });
 class Config {
   constructor(env = process.env) {
     this._env = env;
+  }
+
+  get openClawDir() {
+    return this._env.OPENCLAW_HOME || path.join(os.homedir(), ".openclaw");
   }
 
   get idgwBaseUrl() {

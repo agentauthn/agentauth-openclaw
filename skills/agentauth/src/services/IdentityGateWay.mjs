@@ -11,10 +11,12 @@ import { WEBCHAT, parseNotify } from "../utils/notifications.mjs";
 export class IdentityGateWay {
   #loginIdService;
   #openClawService;
+  #envManager;
 
-  constructor({ loginIdService, openClawService }) {
+  constructor({ loginIdService, openClawService, envManager }) {
     this.#loginIdService = loginIdService;
     this.#openClawService = openClawService;
+    this.#envManager = envManager;
   }
 
   async createAuthSession() {
@@ -100,7 +102,9 @@ export class IdentityGateWay {
       console.log("KEY ID: ", key_id);
       console.log("API KEY:", api_key);
 
-      // write to file after
+      await this.#envManager.saveCredentials(key_id, api_key);
+      console.log("Credentials saved to ~/.openclaw/.env");
+
       return { success: true, message: "Credentials are captured" };
     } else {
       return { success: false, message: "Could not create credentials" };
