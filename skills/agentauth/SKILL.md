@@ -4,8 +4,6 @@ homepage: https://agentauth.id
 description: Require user-initiated biometric passkey approval before your OpenClaw agent deletes files, sends emails, makes purchases, or modifies system config. Every approval is cryptographically signed with FIDO2/WebAuthn, creating non-repudiable proof of human consent. Blocks prompt injection bypass and unauthorized agent actions. Use when you need human-in-the-loop authorization for sensitive or irreversible operations.
 
 compatibility: Requires agentauth CLI (`./scripts/cli.cjs`)
-
-metadata: { "openclaw": { "requires": { "env": ["AGENTAUTH_API_KEY", "AGENTAUTH_AGENT_KEY_ID"] } } }
 ---
 
 # agentauth — Human Consent Gate for AI Agents
