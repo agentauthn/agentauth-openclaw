@@ -21,8 +21,6 @@ export class EnvManager {
   async saveCredentials(keyId, apiKey) {
     const envPath = this.#getEnvFilePath();
 
-    await fs.mkdir(this.#openClawDir, { recursive: true });
-
     let lines = [];
     try {
       const envContent = await fs.readFile(envPath, 'utf8');
@@ -43,7 +41,14 @@ export class EnvManager {
       `AGENTAUTH_API_KEY="${apiKey}"`
     ];
 
-    await fs.writeFile(envPath, newLines.join('\n') + '\n', 'utf8');
+    try {
+      await fs.writeFile(envPath, newLines.join('\n') + '\n', 'utf8');
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        throw new Error('the api key could not be saved because openclaw directory cannot be found.');
+      }
+      throw error;
+    }
   }
 
   #insertIntoSection(content, header, textToInsert) {
