@@ -21,6 +21,21 @@ import { EnvManager } from '../utils/EnvManager.mjs';
 const openClawService = new OpenClawService();
 const envManager = new EnvManager({ openClawDir: config.openClawDir });
 
+const getUnauthenticatedIdgwService = () => {
+  const httpClient = new HttpClient();
+  const sseClient = new SseClient();
+  const loginIdService = new LoginIDService({
+    baseUrl: config.idgwBaseUrl,
+    httpClient,
+    sseClient,
+  });
+  return new IdentityGateWay({
+    loginIdService,
+    openClawService,
+    envManager,
+  });
+};
+
 let idgwService;
 const getIdgwService = () => {
   if (idgwService) {
@@ -55,7 +70,7 @@ const getIdgwService = () => {
 
 const commandFactories = {
   'create-session': () => new CreateSessionCommand(getIdgwService()),
-  'auth-flow': () => new AuthFlowCommand(getIdgwService()),
+  'auth-flow': () => new AuthFlowCommand(getUnauthenticatedIdgwService()),
   'wait-for-session': () => new WaitForSessionCommand(getIdgwService()),
   'approval-flow': () => new ApprovalFlowCommand(getIdgwService()),
   'test-notify': () => new TestNotifyCommand(openClawService),
