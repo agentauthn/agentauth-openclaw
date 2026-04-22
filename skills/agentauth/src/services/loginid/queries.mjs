@@ -27,3 +27,9 @@ export const APPROVAL_INIT_QUERY = `
     }
   }
 `;
+
+export const CREATE_SESSION_QUERY = `
+  mutation {
+    createSession
+  }
+`;

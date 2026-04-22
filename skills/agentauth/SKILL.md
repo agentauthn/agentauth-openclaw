@@ -4,8 +4,6 @@ homepage: https://agentauth.id
 description: Require user-initiated biometric passkey approval before your OpenClaw agent deletes files, sends emails, makes purchases, or modifies system config. Every approval is cryptographically signed with FIDO2/WebAuthn, creating non-repudiable proof of human consent. Blocks prompt injection bypass and unauthorized agent actions. Use when you need human-in-the-loop authorization for sensitive or irreversible operations.
 
 compatibility: Requires agentauth CLI (`./scripts/cli.cjs`)
-
-metadata: { "openclaw": { "requires": { "env": ["AGENTAUTH_API_KEY", "AGENTAUTH_AGENT_KEY_ID"] } } }
 ---
 
 # agentauth — Human Consent Gate for AI Agents
@@ -24,6 +22,69 @@ agentauth adds a cryptographic consent layer: before your agent executes anythin
 - Stolen API tokens being used to impersonate your agent
 - Agent modifying production configs or deploying code unsupervised
 - Social engineering attacks that bypass in-chat "approval"
+
+---
+
+## Initial Setup: Initialize My AgentAuth
+
+Before approvals can be used, the user must register their authentication credentials.
+
+If the user says something like:
+
+- "Initialize my AgentAuth"
+- "Set up AgentAuth"
+- "Connect my passkey"
+- "Register AgentAuth"
+
+the agent MUST handle setup through a sub-agent so the main session remains responsive.
+
+---
+
+### Required Flow: Non-Blocking Initialization
+
+**Main Agent Responsibilities:**
+
+1. Detect that the user is requesting AgentAuth initialization.
+2. Spawn a sub-agent that runs the authentication setup flow.
+3. Immediately call `sessions_yield()`.
+4. Do not narrate internal sub-agent creation. The setup flow will notify the user directly.
+
+---
+
+### Sub-Agent Task
+
+The sub-agent runs:
+
+```bash
+./skills/agentauth/scripts/cli.cjs auth-flow --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>
+```
+
+This command sends the user a secure setup link. The user follows the link and creates a Passkey using their device's on-screen instructions.
+
+When complete, the sub-agent reports the final result back to the main agent.
+
+---
+
+### Main Agent Example Call
+
+```js
+sessions_spawn({
+  runtime: "subagent",
+  task: "./skills/agentauth/scripts/cli.cjs auth-flow --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>"
+});
+
+sessions_yield();
+```
+
+---
+
+### What the User Experiences
+
+1. User says: `Initialize my AgentAuth`
+2. User receives a secure setup link
+3. User creates a Passkey
+4. Agent receives completion status
+5. Future sensitive actions can now require biometric approval
 
 ---
 
@@ -139,6 +200,7 @@ sessions_yield();
 
 ## Hard Rules (Updated for Sub-Agents)
 
+- If the user requests AgentAuth setup or initialization, ALWAYS use the `auth-flow` sub-agent workflow.
 - NEVER execute dangerous commands directly in the main agent.
 - ALWAYS delegate the entire approval and execution flow to a sub-agent.
 - NEVER announce the creation of the approval sub-agent. The `--notify` flag is responsible for user communication.
@@ -197,6 +259,8 @@ Exec approvals are the lock on the front door. agentauth is the lock on the safe
 - Human approval (explicit consent for a specific action)
 
 Both are required before execution. This is not a limitation — it is the feature.
+
+Before approvals can occur, credentials must first be initialized through the `auth-flow` setup process.
 
 ---
 

@@ -8,6 +8,7 @@ import { CreateSessionCommand } from './commands/CreateSessionCommand.mjs';
 import { IdentityGateWay } from '../services/IdentityGateWay.mjs';
 import { WaitForSessionCommand } from './commands/WaitForSessionCommand.mjs';
 import { ApprovalFlowCommand } from './commands/ApprovalFlowCommand.mjs';
+import { AuthFlowCommand } from './commands/AuthFlowCommand.mjs';
 import { TestNotifyCommand } from './commands/TestNotifyCommand.mjs';
 import { HttpClient } from '../services/HttpClient.mjs';
 import { AgentSigner } from '../utils/AgentSigner.mjs';
@@ -15,8 +16,25 @@ import { SseClient } from '../services/SseClient.mjs';
 import { config } from '../utils/env.mjs';
 import { OpenClawService } from '../services/OpenClawService.mjs';
 import { LoginIDService } from '../services/loginid/index.mjs';
+import { EnvManager } from '../utils/EnvManager.mjs';
 
 const openClawService = new OpenClawService();
+const envManager = new EnvManager({ openClawDir: config.openClawDir });
+
+const getUnauthenticatedIdgwService = () => {
+  const httpClient = new HttpClient();
+  const sseClient = new SseClient();
+  const loginIdService = new LoginIDService({
+    baseUrl: config.idgwBaseUrl,
+    httpClient,
+    sseClient,
+  });
+  return new IdentityGateWay({
+    loginIdService,
+    openClawService,
+    envManager,
+  });
+};
 
 let idgwService;
 const getIdgwService = () => {
@@ -45,12 +63,14 @@ const getIdgwService = () => {
   idgwService = new IdentityGateWay({
     loginIdService,
     openClawService,
+    envManager,
   });
   return idgwService;
 };
 
 const commandFactories = {
   'create-session': () => new CreateSessionCommand(getIdgwService()),
+  'auth-flow': () => new AuthFlowCommand(getUnauthenticatedIdgwService()),
   'wait-for-session': () => new WaitForSessionCommand(getIdgwService()),
   'approval-flow': () => new ApprovalFlowCommand(getIdgwService()),
   'test-notify': () => new TestNotifyCommand(openClawService),
