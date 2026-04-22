@@ -70,7 +70,7 @@ export class EnvManager {
   }
 
   async updateAgentMarkdown() {
-    const agentMdPath = path.join(this.#openClawDir, 'workplace', 'AGENT.md');
+    const agentMdPath = path.join(this.#openClawDir, 'workspace', 'AGENTS.md');
     try {
       let content = await fs.readFile(agentMdPath, 'utf8');
       const originalContent = content;

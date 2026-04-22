@@ -99,9 +99,6 @@ export class IdentityGateWay {
       const { meta } = eventData;
       const { api_key, key_id } = meta;
 
-      console.log("KEY ID: ", key_id);
-      console.log("API KEY:", api_key);
-
       await this.#envManager.saveCredentials(key_id, api_key);
       await this.#envManager.updateAgentMarkdown();
 
