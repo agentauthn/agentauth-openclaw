@@ -39,8 +39,8 @@ export class EnvManager {
 
     const newLines = [
       ...otherLines,
-      `AGENTAUTH_AGENT_KEY_ID=${keyId}`,
-      `AGENTAUTH_API_KEY=${apiKey}`
+      `AGENTAUTH_AGENT_KEY_ID="${keyId}"`,
+      `AGENTAUTH_API_KEY="${apiKey}"`
     ];
 
     await fs.writeFile(envPath, newLines.join('\n') + '\n', 'utf8');
