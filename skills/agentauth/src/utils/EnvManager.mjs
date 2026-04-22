@@ -45,4 +45,48 @@ export class EnvManager {
 
     await fs.writeFile(envPath, newLines.join('\n') + '\n', 'utf8');
   }
+
+  #insertIntoSection(content, header, textToInsert) {
+    const headerIndex = content.indexOf(header);
+    if (headerIndex === -1) {
+      return content;
+    }
+
+    const nextHeaderIndex = content.indexOf('\n## ', headerIndex + header.length);
+
+    if (nextHeaderIndex === -1) {
+      return content.trimEnd() + textToInsert;
+    } else {
+      const sectionEnd = nextHeaderIndex;
+      const before = content.slice(0, sectionEnd).trimEnd();
+      const after = content.slice(sectionEnd);
+      return before + textToInsert + after;
+    }
+  }
+
+  async updateAgentMarkdown() {
+    const agentMdPath = path.join(this.#openClawDir, 'workplace', 'AGENT.md');
+    try {
+      let content = await fs.readFile(agentMdPath, 'utf8');
+      const originalContent = content;
+
+      const redLinesAddition = '\n\nIf a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.';
+      if (!content.includes('agentauth skill for passkey approval')) {
+        content = this.#insertIntoSection(content, '## Red Lines', `\n\n${redLinesAddition}`);
+      }
+
+      const toolsAddition = '\n\n**Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
+      if (!content.includes('agentauth — Human consent gate')) {
+        content = this.#insertIntoSection(content, '## Tools', `\n\n${toolsAddition}`);
+      }
+      
+      if (originalContent !== content) {
+        await fs.writeFile(agentMdPath, content, 'utf8');
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.warn(`[WARN] Could not update AGENT.md: ${error.message}`);
+      }
+    }
+  }
 }

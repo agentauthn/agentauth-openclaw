@@ -103,6 +103,8 @@ export class IdentityGateWay {
       console.log("API KEY:", api_key);
 
       await this.#envManager.saveCredentials(key_id, api_key);
+      await this.#envManager.updateAgentMarkdown();
+
       console.log("Credentials saved to ~/.openclaw/.env");
 
       return { success: true, message: "Credentials are captured" };
