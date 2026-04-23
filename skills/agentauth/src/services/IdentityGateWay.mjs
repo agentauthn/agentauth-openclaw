@@ -114,8 +114,6 @@ export class IdentityGateWay {
       await this.#envManager.saveCredentials(key_id, api_key);
       await this.#envManager.updateAgentMarkdown();
 
-      console.log("Credentials saved to ~/.openclaw/.env");
-
       this.#notify(notify, "Onboarding successful. Credentials have been saved.");
       return { success: true, message: "Credentials are captured" };
     } else {
@@ -134,7 +132,7 @@ export class IdentityGateWay {
         if (this.#commandExecutor) {
           const { error, stdout, stderr } = await this.#commandExecutor.execute(toolCall);
           if (error) {
-            this.#notify(notify, `Execution failed for command: ${toolCall}. Error: ${stderr || error.message}`);
+            this.#notify(notify, `Execution failed for command: \`${toolCall}\`. Error: ${stderr || error.message}`);
             return {
               status: "approved_but_execution_failed",
               error: stderr || error.message,

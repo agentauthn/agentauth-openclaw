@@ -6,6 +6,7 @@
 
 import path from 'path';
 import fs from 'fs/promises';
+import { AGENTAUTH_ENV_PATH } from './paths.mjs';
 
 export class EnvManager {
   #openClawDir;
@@ -14,12 +15,9 @@ export class EnvManager {
     this.#openClawDir = openClawDir;
   }
 
-  #getEnvFilePath() {
-    return path.join(this.#openClawDir, '.env');
-  }
-
   async saveCredentials(keyId, apiKey) {
-    const envPath = this.#getEnvFilePath();
+    const envPath = AGENTAUTH_ENV_PATH;
+    await fs.mkdir(path.dirname(envPath), { recursive: true });
 
     let lines = [];
     try {
@@ -45,7 +43,7 @@ export class EnvManager {
       await fs.writeFile(envPath, newLines.join('\n') + '\n', 'utf8');
     } catch (error) {
       if (error.code === 'ENOENT') {
-        throw new Error('the api key could not be saved because openclaw directory cannot be found.');
+        throw new Error('the api key could not be saved because agentauth directory cannot be created.');
       }
       throw error;
     }
