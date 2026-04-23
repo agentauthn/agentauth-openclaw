@@ -1,6 +1,5 @@
 import { jest } from '@jest/globals';
 import { WEBCHAT } from '../../src/utils/notifications.mjs';
-import { base64UrlEncode } from '../../src/utils/crypto.mjs';
 
 const mockOpen = jest.fn();
 jest.unstable_mockModule('open', () => ({
@@ -51,9 +50,7 @@ describe('IdentityGateWay', () => {
       expect(mockLoginIdService.approvalInit).toHaveBeenCalledWith('tool-call', 'display-string');
       expect(result.sessionId).toBe('123');
 
-      const expectedParams = { sessionId: '123', username: 'testuser' };
-      const encodedParams = base64UrlEncode(JSON.stringify(expectedParams));
-      expect(result.approvalUrl).toBe(`http://example.com/approve?d=${encodedParams}`);
+      expect(result.approvalUrl).toBe("http://example.com/approve");
     });
 
     it('should bubble up errors from loginIdService', async () => {
@@ -64,22 +61,19 @@ describe('IdentityGateWay', () => {
 
   describe('createAuthSession', () => {
     it('should create an auth session and return authUrl and sessionId', async () => {
-      const authUrl = 'http://example.com/auth?s=test-session-id';
-      mockLoginIdService.createAuthSession.mockResolvedValue(authUrl);
+      const authUrl = 'http://example.com/auth';
+      const sessionId = 'test-session-id';
+      mockLoginIdService.createAuthSession.mockResolvedValue({ link: authUrl, sessionId });
 
       const result = await idgw.createAuthSession();
 
-      const expectedParams = { sessionId: 'test-session-id' };
-      const encodedParams = base64UrlEncode(JSON.stringify(expectedParams));
-      const expectedUrl = `http://example.com/auth?d=${encodedParams}`;
-
-      expect(result.sessionId).toBe('test-session-id');
-      expect(result.authUrl).toBe(expectedUrl);
+      expect(result.sessionId).toBe(sessionId);
+      expect(result.authUrl).toBe(authUrl);
     });
 
-    it('should throw an error if sessionId is not in the authUrl', async () => {
+    it('should throw an error if sessionId is not returned from service', async () => {
       const authUrl = 'http://example.com/auth';
-      mockLoginIdService.createAuthSession.mockResolvedValue(authUrl);
+      mockLoginIdService.createAuthSession.mockResolvedValue({ link: authUrl });
 
       await expect(idgw.createAuthSession()).rejects.toThrow('Authentication session is not found');
     });
