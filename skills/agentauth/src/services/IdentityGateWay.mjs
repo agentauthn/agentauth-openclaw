@@ -19,6 +19,15 @@ export class IdentityGateWay {
     this.#envManager = envManager;
   }
 
+  #notify(notify, message) {
+    if (notify && this.#openClawService) {
+      const { channel, target } = parseNotify(notify);
+      if (channel && target) {
+        this.#openClawService.notify(message, channel, target);
+      }
+    }
+  }
+
   async createAuthSession() {
     const authUrl = await this.#loginIdService.createAuthSession();
 
@@ -85,8 +94,10 @@ export class IdentityGateWay {
     const eventData = await this.#handleSessionWait(sessionId, approvalUrl, { notify, notificationMessage });
 
     if (eventData?.status?.toLowerCase() === "approved") {
+      this.#notify(notify, "The action was approved.");
       return JSON.stringify({ status: "approved" });
     } else {
+      this.#notify(notify, "The action was denied.");
       return JSON.stringify({ status: "deny" });
     }
   }
@@ -104,8 +115,10 @@ export class IdentityGateWay {
 
       console.log("Credentials saved to ~/.openclaw/.env");
 
+      this.#notify(notify, "Onboarding successful. Credentials have been saved.");
       return { success: true, message: "Credentials are captured" };
     } else {
+      this.#notify(notify, "Onboarding failed. Could not create credentials.");
       return { success: false, message: "Could not create credentials" };
     }
   }
