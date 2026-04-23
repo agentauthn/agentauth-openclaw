@@ -6,6 +6,7 @@
 
 import path from 'path';
 import fs from 'fs/promises';
+import { AGENTAUTH_ENV_PATH } from './paths.mjs';
 
 export class EnvManager {
   #openClawDir;
@@ -14,12 +15,9 @@ export class EnvManager {
     this.#openClawDir = openClawDir;
   }
 
-  #getEnvFilePath() {
-    return path.join(this.#openClawDir, '.env');
-  }
-
   async saveCredentials(keyId, apiKey) {
-    const envPath = this.#getEnvFilePath();
+    const envPath = AGENTAUTH_ENV_PATH;
+    await fs.mkdir(path.dirname(envPath), { recursive: true });
 
     let lines = [];
     try {
@@ -45,7 +43,7 @@ export class EnvManager {
       await fs.writeFile(envPath, newLines.join('\n') + '\n', 'utf8');
     } catch (error) {
       if (error.code === 'ENOENT') {
-        throw new Error('the api key could not be saved because openclaw directory cannot be found.');
+        throw new Error('the api key could not be saved because agentauth directory cannot be created.');
       }
       throw error;
     }
@@ -75,12 +73,17 @@ export class EnvManager {
       let content = await fs.readFile(agentMdPath, 'utf8');
       const originalContent = content;
 
-      const redLinesAddition = '\n\nIf a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.';
+      const redLinesAddition = 'If a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.';
       if (!content.includes('agentauth skill for passkey approval')) {
         content = this.#insertIntoSection(content, '## Red Lines', `\n\n${redLinesAddition}`);
       }
 
-      const toolsAddition = '\n\n**Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
+      const dangerousOpsAddition = '## Dangerous Operations Definition\n\nTreat the following as **dangerous**:\n\n* File deletions (`rm`, `rm -rf`, recursive deletes)\n* System-level modifications\n* Database destructive queries (`DELETE`, `DROP`, `TRUNCATE`)\n* Production deployments or config changes\n* External system writes (APIs, PR merges, emails)\n* Security or permission changes\n* Package installs or system mutations\n\nIf unsure → **assume dangerous**';
+      if (!content.includes('## Dangerous Operations Definition')) {
+        content = this.#insertIntoSection(content, '## Red Lines', `\n\n${dangerousOpsAddition}`);
+      }
+
+      const toolsAddition = '*Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
       if (!content.includes('agentauth — Human consent gate')) {
         content = this.#insertIntoSection(content, '## Tools', `\n\n${toolsAddition}`);
       }

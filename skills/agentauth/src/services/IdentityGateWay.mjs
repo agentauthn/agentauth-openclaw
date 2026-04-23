@@ -5,52 +5,44 @@
  */
 
 import open from "open";
-import { base64UrlEncode } from "../utils/crypto.mjs";
 import { WEBCHAT, parseNotify } from "../utils/notifications.mjs";
 
 export class IdentityGateWay {
   #loginIdService;
   #openClawService;
   #envManager;
+  #commandExecutor;
 
-  constructor({ loginIdService, openClawService, envManager }) {
+  constructor({ loginIdService, openClawService, envManager, commandExecutor }) {
     this.#loginIdService = loginIdService;
     this.#openClawService = openClawService;
     this.#envManager = envManager;
+    this.#commandExecutor = commandExecutor;
+  }
+
+  #notify(notify, message) {
+    if (notify && this.#openClawService) {
+      const { channel, target } = parseNotify(notify);
+      if (channel && target) {
+        this.#openClawService.notify(message, channel, target);
+      }
+    }
   }
 
   async createAuthSession() {
-    const authUrl = await this.#loginIdService.createAuthSession();
-
-    const url = new URL(authUrl);
-    const sessionId = url.searchParams.get('s');
+    const { sessionId, link: authUrl } = await this.#loginIdService.createAuthSession();
     if (!sessionId) {
       throw new Error("Authentication session is not found");
     }
 
-    const cleanUrl = new URL(url.origin + url.pathname);
-    const encoded = base64UrlEncode(JSON.stringify({ sessionId }));
-
-    cleanUrl.searchParams.set("d", encoded);
-
-    return { authUrl: cleanUrl.toString(), sessionId };
+    return { authUrl, sessionId };
   }
 
   async approvalInit(toolCall, displayString) {
     const result = await this.#loginIdService.approvalInit(toolCall, displayString);
+    const { approvalUrl, sessionId } = result;
 
-    const { approvalUrl, ...rest } = result;
-    const { sessionId } = rest;
-
-    const url = new URL(approvalUrl);
-    const filtered = Object.fromEntries(
-      Object.entries(rest).filter(([_, v]) => v != null && v !== "")
-    );
-    const encoded = base64UrlEncode(JSON.stringify(filtered));
-
-    url.searchParams.set("d", encoded);
-
-    return { approvalUrl: url.toString(), sessionId };
+    return { approvalUrl, sessionId };
   }
 
   async #handleSessionWait(sessionId, url, { notify, notificationMessage }) {
@@ -87,6 +79,7 @@ export class IdentityGateWay {
     if (eventData?.status?.toLowerCase() === "approved") {
       return JSON.stringify({ status: "approved" });
     } else {
+      this.#notify(notify, "The action was denied.");
       return JSON.stringify({ status: "deny" });
     }
   }
@@ -102,10 +95,10 @@ export class IdentityGateWay {
       await this.#envManager.saveCredentials(key_id, api_key);
       await this.#envManager.updateAgentMarkdown();
 
-      console.log("Credentials saved to ~/.openclaw/.env");
-
+      this.#notify(notify, "Onboarding successful. Credentials have been saved.");
       return { success: true, message: "Credentials are captured" };
     } else {
+      this.#notify(notify, "Onboarding failed. Could not create credentials.");
       return { success: false, message: "Could not create credentials" };
     }
   }
@@ -117,6 +110,24 @@ export class IdentityGateWay {
       const resultStr = await this.approvalWait(sessionId, approvalUrl, { notify });
       const result = JSON.parse(resultStr);
       if (result.status === "approved") {
+        if (this.#commandExecutor) {
+          const { error, stdout, stderr } = await this.#commandExecutor.execute(toolCall);
+          if (error) {
+            this.#notify(notify, `Execution failed for command: \`${toolCall}\`. Error: ${stderr || error.message}`);
+            return {
+              status: "approved_but_execution_failed",
+              error: stderr || error.message,
+              stdout,
+            };
+          } else {
+            this.#notify(notify, `Successfully executed command: \`${toolCall}\``);
+            return {
+              status: "approved_and_executed",
+              stdout,
+              stderr,
+            };
+          }
+        }
         return {
           status: "approved",
         };

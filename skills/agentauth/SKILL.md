@@ -2,8 +2,14 @@
 name: agentauth
 homepage: https://agentauth.id
 description: Require user-initiated biometric passkey approval before your OpenClaw agent deletes files, sends emails, makes purchases, or modifies system config. Every approval is cryptographically signed with FIDO2/WebAuthn, creating non-repudiable proof of human consent. Blocks prompt injection bypass and unauthorized agent actions. Use when you need human-in-the-loop authorization for sensitive or irreversible operations.
-
 compatibility: Requires agentauth CLI (`./scripts/cli.cjs`)
+metadata:
+  {
+    "openclaw":
+      {
+        "requires": { "bins": ["openclaw"] },
+      },
+  }
 ---
 
 # agentauth — Human Consent Gate for AI Agents
@@ -108,91 +114,49 @@ If unsure → **assume dangerous**
 
 To ensure the main agent remains responsive, sensitive operations MUST be handled by a sub-agent. This creates a safe, non-blocking approval workflow.
 
-**The Main Agent's Role:**
+---
 
-1. **Define the Action**: Determine the exact `toolCall` to be executed and a human-readable `displayString`.
-2. **Construct the Sub-Agent Task**: Create a shell command that encapsulates the entire approval and execution logic. This command will be passed to the sub-agent.
-3. **Spawn the Sub-Agent**: Use `sessions_spawn` to create a sub-agent with the constructed task.
-4. **Yield Immediately**: Call `sessions_yield()` to end your turn and wait for the sub-agent to report back. **Do not** announce the sub-agent's creation to the user; the sub-agent handles notifications.
+### Required Flow: Non-Blocking Approval
 
-**The Sub-Agent's Task:**
+**Main Agent Responsibilities:**
 
-The sub-agent will execute a script that performs the following steps:
-
-1. **Request Approval**: It calls the `approval-flow` script, which sends a notification to the user (via the `--notify` flag) and waits for their response.
-2. **Receive the Result**: The script captures the JSON output from the approval process (e.g., `{"status": "approved"}`).
-3. **Conditional Execution**:
-    - If the status is `"approved"`, the script executes the original `toolCall`.
-    - If the status is `"deny"` or an error occurs, the script takes no further action.
-4. **Report the Outcome**: The sub-agent's final output will be a simple message indicating the result (e.g., "Action approved and executed successfully." or "Action was not approved. Status: deny"). This result is sent back to the main agent.
+1.  Detect a dangerous action is being requested.
+2.  Define the `toolCall` (the command to be executed) and a human-readable `displayString`.
+3.  Spawn a sub-agent that runs the `approval-flow` command.
+4.  Immediately call `sessions_yield()`.
+5.  Do not narrate internal sub-agent creation. The `approval-flow` script handles all user notifications.
 
 ---
 
-### Sub-Agent Task Template
+### Sub-Agent Task
 
-Use this template to construct the `task` for `sessions_spawn`. This entire script runs inside the sub-agent.
+The sub-agent runs:
 
 ```bash
-# 1. Define the sensitive command and its human-readable description.
-TOOL_CALL="<THE_ACTUAL_COMMAND_TO_EXECUTE>"
-DISPLAY_STRING="<Human-readable description of the action>"
-
-# 2. Run the approval flow, notify the user, and capture the JSON result.
-# The script will pause here until the user approves, denies, or the request times out.
-# NOTE: The path `./scripts/cli.cjs` refers to the `cli.cjs` script located within *this skill's* directory.
-RESULT_JSON=$(./scripts/cli.cjs approval-flow "$TOOL_CALL" "$DISPLAY_STRING" --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>)
-
-# 3. Check the status and execute the command only if approved.
-STATUS=$(echo "$RESULT_JSON" | jq -r .status)
-if [ "$STATUS" = "approved" ]; then
-  # Execute the original command now that approval is confirmed.
-  eval $TOOL_CALL
-  echo "Action approved and executed successfully."
-else
-  # Report that the action was denied or failed.
-  echo "Action was not approved. Status: $STATUS"
-fi
+./skills/agentauth/scripts/cli.cjs approval-flow "<THE_ACTUAL_COMMAND_TO_EXECUTE>" "<Human-readable description>" --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>
 ```
 
-**Placeholder Values:**
-
-- `<THE_ACTUAL_COMMAND_TO_EXECUTE>`: Replace with the exact, dangerous command (e.g., `rm ~/.openclaw/secret.txt`).
-- `<Human-readable description of the action>`: A short string for the user's approval screen.
-- `<CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>`: These are conceptual placeholders. The agent must substitute them with the actual channel and target ID from the current session context to ensure the user is notified correctly.
+This single command handles the entire workflow:
+- It sends the user a secure approval link.
+- It waits for the user to respond (approve/deny).
+- **If approved**, it executes the command.
+- **If denied**, it does nothing.
+- It returns the final result (e.g., the command's output or a status message) to the main agent.
 
 ---
 
 ### Main Agent Example Call
 
-This demonstrates how the main agent prepares and spawns the sub-agent.
-
-```
-// 1. Define the variables for the sub-agent's task.
+```js
 const dangerous_command = "rm ~/.openclaw/important.txt";
 const display_string = "Delete the important notes file";
 const notification_target = "slack:U12345"; // Example target
 
-// 2. Construct the full task script for the sub-agent.
-const subagent_task = `
-TOOL_CALL="${dangerous_command}"
-DISPLAY_STRING="${display_string}"
-RESULT_JSON=$(./scripts/cli.cjs approval-flow "$TOOL_CALL" "$DISPLAY_STRING" --notify ${notification_target})
-STATUS=$(echo "$RESULT_JSON" | jq -r .status)
-if [ "$STATUS" = "approved" ]; then
-  eval $TOOL_CALL
-  echo "Action approved and executed successfully."
-else
-  echo "Action was not approved. Status: $STATUS"
-fi
-`;
-
-// 3. Spawn the sub-agent to handle the entire flow.
 sessions_spawn({
   runtime: "subagent",
-  task: subagent_task,
+  task: `./skills/agentauth/scripts/cli.cjs approval-flow "${dangerous_command}" "${display_string}" --notify ${notification_target}`
 });
 
-// 4. Yield the turn to wait for the sub-agent's final report.
 sessions_yield();
 ```
 

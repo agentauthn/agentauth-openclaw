@@ -17,9 +17,11 @@ import { config } from '../utils/env.mjs';
 import { OpenClawService } from '../services/OpenClawService.mjs';
 import { LoginIDService } from '../services/loginid/index.mjs';
 import { EnvManager } from '../utils/EnvManager.mjs';
+import { CommandExecutor } from '../services/CommandExecutor.mjs';
 
 const openClawService = new OpenClawService();
 const envManager = new EnvManager({ openClawDir: config.openClawDir });
+const commandExecutor = new CommandExecutor();
 
 const getUnauthenticatedIdgwService = () => {
   const httpClient = new HttpClient();
@@ -33,6 +35,7 @@ const getUnauthenticatedIdgwService = () => {
     loginIdService,
     openClawService,
     envManager,
+    commandExecutor,
   });
 };
 
@@ -64,6 +67,7 @@ const getIdgwService = () => {
     loginIdService,
     openClawService,
     envManager,
+    commandExecutor,
   });
   return idgwService;
 };

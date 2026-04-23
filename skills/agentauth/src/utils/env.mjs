@@ -7,8 +7,10 @@
 import os from "os";
 import path from "path";
 import { config as loadDotenv } from "dotenv";
+import { AGENTAUTH_ENV_PATH } from "./paths.mjs";
 
 loadDotenv({ quiet: true });
+loadDotenv({ path: AGENTAUTH_ENV_PATH, quiet: true, override: true });
 
 class Config {
   constructor(env = process.env) {
