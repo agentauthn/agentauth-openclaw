@@ -5,7 +5,6 @@
  */
 
 import open from "open";
-import { base64UrlEncode } from "../utils/crypto.mjs";
 import { WEBCHAT, parseNotify } from "../utils/notifications.mjs";
 
 export class IdentityGateWay {
@@ -31,37 +30,19 @@ export class IdentityGateWay {
   }
 
   async createAuthSession() {
-    const authUrl = await this.#loginIdService.createAuthSession();
-
-    const url = new URL(authUrl);
-    const sessionId = url.searchParams.get('s');
+    const { sessionId, link: authUrl } = await this.#loginIdService.createAuthSession();
     if (!sessionId) {
       throw new Error("Authentication session is not found");
     }
 
-    const cleanUrl = new URL(url.origin + url.pathname);
-    const encoded = base64UrlEncode(JSON.stringify({ sessionId }));
-
-    cleanUrl.searchParams.set("d", encoded);
-
-    return { authUrl: cleanUrl.toString(), sessionId };
+    return { authUrl, sessionId };
   }
 
   async approvalInit(toolCall, displayString) {
     const result = await this.#loginIdService.approvalInit(toolCall, displayString);
+    const { approvalUrl, sessionId } = result;
 
-    const { approvalUrl, ...rest } = result;
-    const { sessionId } = rest;
-
-    const url = new URL(approvalUrl);
-    const filtered = Object.fromEntries(
-      Object.entries(rest).filter(([_, v]) => v != null && v !== "")
-    );
-    const encoded = base64UrlEncode(JSON.stringify(filtered));
-
-    url.searchParams.set("d", encoded);
-
-    return { approvalUrl: url.toString(), sessionId };
+    return { approvalUrl, sessionId };
   }
 
   async #handleSessionWait(sessionId, url, { notify, notificationMessage }) {
