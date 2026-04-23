@@ -12,11 +12,13 @@ export class IdentityGateWay {
   #loginIdService;
   #openClawService;
   #envManager;
+  #commandExecutor;
 
-  constructor({ loginIdService, openClawService, envManager }) {
+  constructor({ loginIdService, openClawService, envManager, commandExecutor }) {
     this.#loginIdService = loginIdService;
     this.#openClawService = openClawService;
     this.#envManager = envManager;
+    this.#commandExecutor = commandExecutor;
   }
 
   #notify(notify, message) {
@@ -94,7 +96,6 @@ export class IdentityGateWay {
     const eventData = await this.#handleSessionWait(sessionId, approvalUrl, { notify, notificationMessage });
 
     if (eventData?.status?.toLowerCase() === "approved") {
-      this.#notify(notify, "The action was approved.");
       return JSON.stringify({ status: "approved" });
     } else {
       this.#notify(notify, "The action was denied.");
@@ -130,6 +131,24 @@ export class IdentityGateWay {
       const resultStr = await this.approvalWait(sessionId, approvalUrl, { notify });
       const result = JSON.parse(resultStr);
       if (result.status === "approved") {
+        if (this.#commandExecutor) {
+          const { error, stdout, stderr } = await this.#commandExecutor.execute(toolCall);
+          if (error) {
+            this.#notify(notify, `Execution failed for command: ${toolCall}. Error: ${stderr || error.message}`);
+            return {
+              status: "approved_but_execution_failed",
+              error: stderr || error.message,
+              stdout,
+            };
+          } else {
+            this.#notify(notify, `Successfully executed command: \`${toolCall}\``);
+            return {
+              status: "approved_and_executed",
+              stdout,
+              stderr,
+            };
+          }
+        }
         return {
           status: "approved",
         };
