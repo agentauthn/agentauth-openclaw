@@ -18,6 +18,7 @@ jest.unstable_mockModule('fs/promises', () => ({
 }));
 
 const { EnvManager } = await import('../../src/utils/EnvManager.mjs');
+const { AGENTAUTH_ENV_PATH } = await import('../../src/utils/paths.mjs');
 
 describe('EnvManager', () => {
   const openClawDir = '/fake/openclaw/dir';
@@ -31,14 +32,14 @@ describe('EnvManager', () => {
   describe('saveCredentials', () => {
     const keyId = 'test-key-id';
     const apiKey = 'test-api-key';
-    const envPath = path.join(openClawDir, '.env');
+    const envPath = AGENTAUTH_ENV_PATH;
 
-    it('should throw an error if openclaw directory does not exist', async () => {
+    it('should throw an error if agentauth directory cannot be created', async () => {
       fs.readFile.mockRejectedValue({ code: 'ENOENT' });
       fs.writeFile.mockRejectedValue({ code: 'ENOENT' });
 
-      await expect(envManager.saveCredentials(keyId, apiKey)).rejects.toThrow('the api key could not be saved because openclaw directory cannot be found.');
-      expect(fs.mkdir).not.toHaveBeenCalled();
+      await expect(envManager.saveCredentials(keyId, apiKey)).rejects.toThrow('the api key could not be saved because agentauth directory cannot be created.');
+      expect(fs.mkdir).toHaveBeenCalled();
     });
 
     it('should save credentials to a new .env file if directory exists', async () => {
@@ -47,7 +48,7 @@ describe('EnvManager', () => {
 
       await envManager.saveCredentials(keyId, apiKey);
 
-      expect(fs.mkdir).not.toHaveBeenCalled();
+      expect(fs.mkdir).toHaveBeenCalled();
       const expectedContent = `AGENTAUTH_AGENT_KEY_ID="${keyId}"\nAGENTAUTH_API_KEY="${apiKey}"\n`;
       expect(fs.writeFile).toHaveBeenCalledWith(envPath, expectedContent, 'utf8');
     });
@@ -59,7 +60,7 @@ describe('EnvManager', () => {
 
       await envManager.saveCredentials(keyId, apiKey);
 
-      expect(fs.mkdir).not.toHaveBeenCalled();
+      expect(fs.mkdir).toHaveBeenCalled();
       const expectedContent = `OTHER_VAR="some_value"\nAGENTAUTH_AGENT_KEY_ID="${keyId}"\nAGENTAUTH_API_KEY="${apiKey}"\n`;
       expect(fs.writeFile).toHaveBeenCalledWith(envPath, expectedContent, 'utf8');
     });
@@ -73,7 +74,7 @@ describe('EnvManager', () => {
       
       await envManager.saveCredentials(newKeyId, newApiKey);
 
-      expect(fs.mkdir).not.toHaveBeenCalled();
+      expect(fs.mkdir).toHaveBeenCalled();
       const expectedContent = `OTHER_VAR="some_value"\nAGENTAUTH_AGENT_KEY_ID="${newKeyId}"\nAGENTAUTH_API_KEY="${newApiKey}"\n`;
       expect(fs.writeFile).toHaveBeenCalledWith(envPath, expectedContent, 'utf8');
     });
@@ -115,13 +116,7 @@ describe('EnvManager', () => {
       
       expect(fs.writeFile).toHaveBeenCalledTimes(1);
       
-      const redLinesAddition = '\n\nIf a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.';
-      const toolsAddition = '\n\n**Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
-      const textToInsertRedLines = `\n\n${redLinesAddition}`;
-      const textToInsertTools = `\n\n${toolsAddition}`;
-
-      const contentAfterRedLines = `## Red Lines${textToInsertRedLines}\n## Tools`;
-      const expectedFinalContent = contentAfterRedLines + textToInsertTools;
+      const expectedFinalContent = '## Red Lines\n\nIf a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.\n\n## Dangerous Operations Definition\n\nTreat the following as **dangerous**:\n\n* File deletions (`rm`, `rm -rf`, recursive deletes)\n* System-level modifications\n* Database destructive queries (`DELETE`, `DROP`, `TRUNCATE`)\n* Production deployments or config changes\n* External system writes (APIs, PR merges, emails)\n* Security or permission changes\n* Package installs or system mutations\n\nIf unsure → **assume dangerous**\n## Tools\n\n*Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
 
       const writtenContent = fs.writeFile.mock.calls[0][1];
       expect(writtenContent).toBe(expectedFinalContent);
@@ -136,9 +131,7 @@ describe('EnvManager', () => {
 
       expect(fs.writeFile).toHaveBeenCalledTimes(1);
 
-      const toolsAddition = '\n\n**Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
-      const textToInsertTools = `\n\n${toolsAddition}`;
-      const expectedContent = initialContent + textToInsertTools;
+      const expectedContent = '## Red Lines\n\nIf a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.\n\n## Dangerous Operations Definition\n\nTreat the following as **dangerous**:\n\n* File deletions (`rm`, `rm -rf`, recursive deletes)\n* System-level modifications\n* Database destructive queries (`DELETE`, `DROP`, `TRUNCATE`)\n* Production deployments or config changes\n* External system writes (APIs, PR merges, emails)\n* Security or permission changes\n* Package installs or system mutations\n\nIf unsure → **assume dangerous**\n## Tools\n\n*Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
       
       const writtenContent = fs.writeFile.mock.calls[0][1];
       expect(writtenContent).toBe(expectedContent);
@@ -148,14 +141,24 @@ describe('EnvManager', () => {
       const initialContent = `
 ## Red Lines
 
-If a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.
+If a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.## Dangerous Operations Definition
 
+Treat the following as **dangerous**:
+
+* File deletions (\`rm\`, \`rm -rf\`, recursive deletes)
+* System-level modifications
+* Database destructive queries (\`DELETE\`, \`DROP\`, \`TRUNCATE\`)
+* Production deployments or config changes
+* External system writes (APIs, PR merges, emails)
+* Security or permission changes
+* Package installs or system mutations
+
+If unsure → **assume dangerous**
 ## Tools
 
-**Security:**
+*Security:**
 
-- agentauth — Human consent gate using passkeys to authorize sensitive actions.
-`;
+- agentauth — Human consent gate using passkeys to authorize sensitive actions.`;
       fs.readFile.mockResolvedValue(initialContent);
 
       await envManager.updateAgentMarkdown();

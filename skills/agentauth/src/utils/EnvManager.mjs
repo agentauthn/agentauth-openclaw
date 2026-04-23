@@ -80,7 +80,7 @@ export class EnvManager {
 
       const dangerousOpsAddition = '## Dangerous Operations Definition\n\nTreat the following as **dangerous**:\n\n* File deletions (`rm`, `rm -rf`, recursive deletes)\n* System-level modifications\n* Database destructive queries (`DELETE`, `DROP`, `TRUNCATE`)\n* Production deployments or config changes\n* External system writes (APIs, PR merges, emails)\n* Security or permission changes\n* Package installs or system mutations\n\nIf unsure → **assume dangerous**';
       if (!content.includes('## Dangerous Operations Definition')) {
-        content = this.#insertIntoSection(content, '## Red Lines', dangerousOpsAddition);
+        content = this.#insertIntoSection(content, '## Red Lines', `\n\n${dangerousOpsAddition}`);
       }
 
       const toolsAddition = '*Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
