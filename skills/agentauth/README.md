@@ -19,13 +19,13 @@ You can install this skill into OpenClaw using the provided script or manually.
 ### Option 1 — Using the install script (recommended)
 
 ```bash
-npm run install:local
+npm run deploy:local
 ```
 
 Optionally, you can pass a custom OpenClaw directory:
 
 ```bash
-npm run install:local -- /path/to/openclaw
+npm run deploy:local -- /path/to/openclaw
 ```
 
 If no path is provided, the script will use:
@@ -61,21 +61,36 @@ npm run build
 2. **Package and install the skill**
 
 ```bash
-mkdir loginid-identity-gateway
-cp SKILL.md loginid-identity-gateway/
-cp -r scripts loginid-identity-gateway/
-mv loginid-identity-gateway ~/.openclaw/skills/
+mkdir agentauth
+cp SKILL.md agentauth
+cp -r scripts agentauth
+mv agentauth ~/.openclaw/skills
 ```
 
 If using a custom OpenClaw directory:
 
 ```bash
-mv loginid-identity-gateway <openclaw-directory>/skills/
+mv agentauth <openclaw-directory>/skills/
 ```
 
 Restart OpenClaws gateway and it will automatically detect and use the skill when needed.
 
 ---
+
+## Initialize the Skill
+
+Once the skill is installed, ask OpenClaw to initialize it by saying something like:
+
+```
+Initialize my AgentAuth
+```
+
+OpenClaw will send you a secure link where you can:
+
+- Create a passkey
+- Automatically configure your credentials
+
+No manual credential setup is required.
 
 ## Command Used by OpenClaw
 
@@ -97,7 +112,7 @@ node ./scripts/cli.cjs approval-flow "<toolCall>" "<displayString>" [--notify <c
 
 3. The script:
 
-   - Creates an approval session with LoginID Identity Gateway
+   - Creates an approval session with LoginID agentauth
    - Generates an approval URL
 
 4. The user is notified:
@@ -122,47 +137,6 @@ node ./scripts/cli.cjs approval-flow "<toolCall>" "<displayString>" [--notify <c
    - **Approved** → action is executed
    - **Denied** → action is ignored 
    - **Timeout** → action is ignored
-
----
-
-## Get Your Credentials
-
-Before configuring this skill, register your passkey at:
-
-https://consent.loginid.io/auth
-
-After registration, your **API Key** and **Agent Key ID** will be generated and shown in the dashboard.
-
-Save both values — they are required for setup.
-
----
-
-## Environment Variables
-
-This skill requires the following values to be provided via `OpenClaw config` (`~/.openclaw/openclaw.json`).
-
-| Variable                 | Required | Description                                                     |
-| ------------------------ | -------- | --------------------------------------------------------------- |
-| `AGENTAUTH_API_KEY`      | Yes      | API key used to authenticate requests to agentauth.               |
-| `AGENTAUTH_AGENT_KEY_ID` | Yes      | Identifier of the registered agent key used for approval flows. |
-
-### Example
-
-```json
-{
-  "skills": {
-    "entries": {
-      "agentauth": {
-        "enabled": true,
-        "env": {
-          "AGENTAUTH_API_KEY": "<API_KEY>",
-          "AGENTAUTH_AGENT_KEY_ID": "<AGENT_KEY_ID>"
-        }
-      }
-    }
-  }
-}
-```
 
 ---
 

@@ -43,58 +43,35 @@ npm unlink -g openclaw-cli
 
 ---
 
-## Obtaining Your API Key Credentials
+## Initialize the Skill
 
-Before configuring this skill, register your passkey in your agentauth gateway dashboard.
-
-```
-Usually:
-<IDGW_BASE_URL>/auth
-```
-
-Example:
+Once the skill is installed, ask OpenClaw to initialize it by saying something like:
 
 ```
-For local development:
-http://localhost:8090/auth
+Initialize my AgentAuth
 ```
 
-After registration, your **API Key** and **Agent Key ID** will be generated and shown in the dashboard.
+OpenClaw will send you a secure link where you can:
 
-Save both values — they are required for setup.
+- Create a passkey
+- Automatically configure your credentials
+
+No manual credential setup is required.
 
 ---
 
 ## Environment Variables
 
-This skill requires the following values to be provided via `OpenClaw config` (`~/.openclaw/openclaw.json`).
+Set `IDGW_BASE_URL` within your OpenClaw directory (`~/.openclaw/.env`) to override the default gateway URL.
 
-| Variable            | Required | Description                                                                                 |
-| ------------------- | -------- | ------------------------------------------------------------------------------------------- |
-| `IDGW_BASE_URL`     | No       | Base URL of the gateway (default: `http://localhost:8090`) |
-| `AGENTAUTH_AGENT_PRIVATE_KEY` | No      | PEM-encoded **RSA private key (RSA-PSS SHA-512)** used to sign requests to gateway |
-| `AGENTAUTH_API_KEY`      | Yes      | The API key generated after passkey registration. Used to authenticate approval requests with the gateway. |
-| `AGENTAUTH_AGENT_KEY_ID`      | Yes      | The unique identifier for your registered agent key. Used to associate approval requests with your account. |
-| `AGENTAUTH_NOTIFY`        | No       | Default notification target in format `provider:destination` (used if `--notify` not set)   |
+By default, the CLI uses the production agentauth gateway.
 
-### Example
+Use this to point the CLI to another environment such as QA, Dev, or Local.
 
-This is the most minimal setup.
+Example:
 
-```json
-{
-  "skills": {
-    "entries": {
-      "agentauth": {
-        "enabled": true,
-        "env": {
-          "AGENTAUTH_API_KEY": "<API_KEY>",
-          "AGENTAUTH_AGENT_KEY_ID": "<AGENT_KEY_ID>"
-        }
-      }
-    }
-  }
-}
+```bash
+IDGW_BASE_URL=http://localhost:8090/api
 ```
 
 ---
@@ -251,11 +228,33 @@ agentauth wait-for-session abc123 https://approval.url \
 
 ---
 
+### auth-flow
+
+Runs the full flow:
+
+1. Create signup session
+2. Send notification (optional)
+3. Wait for completion
+4. Sets credentials at `~/.agentauth/.env` automatically
+
+```bash
+agentauth auth-flow --notify <provider:destination>
+```
+
+Example:
+
+```bash
+agentauth auth-flow \
+  --notify slack:channel:C123456
+```
+
+---
+
 ### approval-flow
 
 Runs the full flow:
 
-1. Create session
+1. Create approval session
 2. Send notification (optional)
 3. Wait for approval
 
@@ -306,19 +305,6 @@ During approval:
 - If `notify` is set, a notification is sent
 - If notification fails, the CLI opens the approval URL in the browser
 - It is recommended to verify your setup using `test-notify`
-
----
-
-## How It Works
-
-1. approvalInit
-   Sends a GraphQL request to IDGW and returns `approvalUrl` and `sessionId`
-
-2. approvalWait
-   Optionally sends a notification, then waits for an SSE event (`session`)
-
-3. approvalFlow
-   Combines initialization and waiting into a single command
 
 ---
 
