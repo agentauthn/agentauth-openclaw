@@ -33,11 +33,11 @@ Each extension is self-contained and includes its own documentation.
 
 ## Available Extensions
 
-### ClawPass
+### agentauth
 
 Location: `./skills/openclaw`
 
-An OpenClaw-based skill that utilizes a CLI script for interacting with LoginID Identity Gateway (IDGW), enabling secure approval tool workflows.
+An OpenClaw-based skill that utilizes a CLI script for interacting with LoginID AgentAuth Gateway, enabling secure approval tool workflows.
 
 Features include:
 
