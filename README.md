@@ -1,6 +1,6 @@
-# loginid-openclaw
+# agentauth-openclaw
 
-A collection of extensions for OpenClaw, including skills, tools, and integrations with LoginID.
+A collection of extensions for OpenClaw, including skills, tools, and integrations with AgentAuth.
 
 This repository is organized into modular components.
 
@@ -37,7 +37,7 @@ Each extension is self-contained and includes its own documentation.
 
 Location: `./skills/openclaw`
 
-An OpenClaw-based skill that utilizes a CLI script for interacting with LoginID AgentAuth Gateway, enabling secure approval tool workflows.
+An OpenClaw-based skill that utilizes a CLI script for interacting with the AgentAuth Gateway, enabling secure approval tool workflows.
 
 Features include:
 

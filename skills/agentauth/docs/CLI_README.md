@@ -1,6 +1,6 @@
 # agentauth
 
-An OpenClaw skill for accessing LoginID's agentauth gateway.
+An OpenClaw skill for accessing the agentauth gateway.
 
 Also includes a command-line tool for interacting with the gateway, with support for OpenClaw-based notifications.
 

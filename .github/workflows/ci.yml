@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - 'skills/agentauth/**'
+  pull_request:
+    paths:
+      - 'skills/agentauth/**'
+
+jobs:
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Dependency review for PRs
+      - name: Dependency Review
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+
+  agentauth:
+    name: AgentAuth Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: skills/agentauth/package-lock.json
+
+      - name: Install dependencies
+        working-directory: skills/agentauth
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        working-directory: skills/agentauth
+        run: npm run build
+
+      - name: Test
+        working-directory: skills/agentauth
+        run: npm run test
+
+      - name: Audit
+        working-directory: skills/agentauth
+        run: npm audit --omit=dev --audit-level=low
+
+      - name: Upload scripts artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentauth-scripts
+          path: skills/agentauth/scripts/
+          retention-days: 1
