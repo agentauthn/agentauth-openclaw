@@ -112,7 +112,7 @@ node ./scripts/cli.cjs approval-flow "<toolCall>" "<displayString>" [--notify <c
 
 3. The script:
 
-   - Creates an approval session with LoginID agentauth
+   - Creates an approval session with agentauth
    - Generates an approval URL
 
 4. The user is notified:

@@ -12,7 +12,7 @@ const program = new Command();
 
 program
   .name("agentauth")
-  .description("A CLI tool for LoginID's Identity Gateway with OpenClaw")
+  .description("A CLI tool for AgentAuths's Identity Gateway with OpenClaw")
   .version("0.0.1");
 
 program
