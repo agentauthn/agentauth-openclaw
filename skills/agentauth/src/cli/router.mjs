@@ -36,6 +36,7 @@ const getUnauthenticatedIdgwService = () => {
     openClawService,
     envManager,
     commandExecutor,
+    config,
   });
 };
 
@@ -68,6 +69,7 @@ const getIdgwService = () => {
     openClawService,
     envManager,
     commandExecutor,
+    config,
   });
   return idgwService;
 };

@@ -12,12 +12,14 @@ export class IdentityGateWay {
   #openClawService;
   #envManager;
   #commandExecutor;
+  #config;
 
-  constructor({ loginIdService, openClawService, envManager, commandExecutor }) {
+  constructor({ loginIdService, openClawService, envManager, commandExecutor, config }) {
     this.#loginIdService = loginIdService;
     this.#openClawService = openClawService;
     this.#envManager = envManager;
     this.#commandExecutor = commandExecutor;
+    this.#config = config;
   }
 
   #notify(notify, message) {
@@ -85,6 +87,9 @@ export class IdentityGateWay {
   }
 
   async authFlow({ notify } = {}) {
+    if (this.#config.hasCredentials) {
+      throw new Error("Onboarding has already been completed. You cannot create another onboarding session.");
+    }
     const { authUrl, sessionId } = await this.createAuthSession();
     const notificationMessage = "Please visit this URL to complete onboarding: {{url}}";
     const eventData = await this.#handleSessionWait(sessionId, authUrl, { notify, notificationMessage });

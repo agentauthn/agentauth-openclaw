@@ -13,6 +13,8 @@ describe('IdentityGateWay', () => {
   let mockLoginIdService;
   let mockOpenClawService;
   let mockEnvManager;
+  let mockCommandExecutor;
+  let mockConfig;
   let idgw;
 
   beforeEach(() => {
@@ -28,10 +30,18 @@ describe('IdentityGateWay', () => {
       saveCredentials: jest.fn(),
       updateAgentMarkdown: jest.fn(),
     };
+    mockCommandExecutor = {
+      execute: jest.fn(),
+    };
+    mockConfig = {
+      hasCredentials: false,
+    };
     idgw = new IdentityGateWay({
       loginIdService: mockLoginIdService,
       openClawService: mockOpenClawService,
       envManager: mockEnvManager,
+      commandExecutor: mockCommandExecutor,
+      config: mockConfig,
     });
     open.mockClear();
   });
@@ -163,7 +173,7 @@ describe('IdentityGateWay', () => {
   });
 
   describe('approvalFlow', () => {
-    it('should run full flow and return approved', async () => {
+    it('should run full flow and return approved and executed', async () => {
       const initResult = {
         approvalUrl: new URL('http://example.com/approve'),
         sessionId: '456',
@@ -171,12 +181,14 @@ describe('IdentityGateWay', () => {
       
       jest.spyOn(idgw, 'approvalInit').mockResolvedValue(initResult);
       jest.spyOn(idgw, 'approvalWait').mockResolvedValue(JSON.stringify({ status: 'approved' }));
+      mockCommandExecutor.execute.mockResolvedValue({ error: null, stdout: 'executed', stderr: '' });
 
       const result = await idgw.approvalFlow('tool', 'display', { notify: 'test' });
 
       expect(idgw.approvalInit).toHaveBeenCalledWith('tool', 'display');
       expect(idgw.approvalWait).toHaveBeenCalledWith('456', initResult.approvalUrl, { notify: 'test' });
-      expect(result).toEqual({ status: 'approved' });
+      expect(mockCommandExecutor.execute).toHaveBeenCalledWith('tool');
+      expect(result).toEqual({ status: 'approved_and_executed', stdout: 'executed', stderr: '' });
     });
 
     it('should return deny if approvalWait fails', async () => {

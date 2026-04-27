@@ -29,6 +29,10 @@ class Config {
     return this._env.AGENTAUTH_NOTIFY;
   }
 
+  get hasCredentials() {
+    return !!this._env.AGENTAUTH_API_KEY && !!this._env.AGENTAUTH_AGENT_KEY_ID;
+  }
+
   get apiKey() {
     const apiKey = this._env.AGENTAUTH_API_KEY;
     if (!apiKey) {
