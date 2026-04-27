@@ -38,7 +38,7 @@ if (argDir) {
   log(`Using default OpenClaw directory`);
 }
 
-const skillsDir = path.join(openclawDir, "skills");
+const skillsDir = path.join(openclawDir, "workspace", "skills");
 const finalDestination = path.join(skillsDir, gatewayDirName);
 
 if (!fs.existsSync(skillFile)) {
