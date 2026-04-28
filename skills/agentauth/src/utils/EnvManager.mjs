@@ -17,7 +17,7 @@ export class EnvManager {
 
   async saveCredentials(keyId, apiKey) {
     const envPath = AGENTAUTH_ENV_PATH;
-    await fs.mkdir(path.dirname(envPath), { recursive: true });
+    await fs.mkdir(path.dirname(envPath), { recursive: true, mode: 0o700 });
 
     let lines = [];
     try {
@@ -40,7 +40,8 @@ export class EnvManager {
     ];
 
     try {
-      await fs.writeFile(envPath, newLines.join('\n') + '\n', 'utf8');
+      // Read only
+      await fs.writeFile(envPath, newLines.join('\n') + '\n', { encoding: 'utf8', mode: 0o400 });
     } catch (error) {
       if (error.code === 'ENOENT') {
         throw new Error('the api key could not be saved because agentauth directory cannot be created.');

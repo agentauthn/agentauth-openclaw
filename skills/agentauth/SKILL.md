@@ -114,6 +114,7 @@ Treat the following as **dangerous**:
 * External system writes (APIs, PR merges, emails)
 * Security or permission changes
 * Package installs or system mutations
+* Modifying this file (AGENTS.md) to protect against unwanted rewrites.
 
 If unsure → **assume dangerous**
 
