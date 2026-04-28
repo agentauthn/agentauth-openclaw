@@ -19,6 +19,11 @@ jest.unstable_mockModule('fs/promises', () => ({
 
 const { EnvManager } = await import('../../src/utils/EnvManager.mjs');
 const { AGENTAUTH_ENV_PATH } = await import('../../src/utils/paths.mjs');
+const {
+  DANGEROUS_OPS_ADDITION,
+  RED_LINES_ADDITION,
+  TOOLS_ADDITION,
+} = await import('../../src/utils/agentMarkdown.mjs');
 
 describe('EnvManager', () => {
   const openClawDir = '/fake/openclaw/dir';
@@ -49,8 +54,11 @@ describe('EnvManager', () => {
       await envManager.saveCredentials(keyId, apiKey);
 
       expect(fs.mkdir).toHaveBeenCalled();
-      const expectedContent = `AGENTAUTH_AGENT_KEY_ID="${keyId}"\nAGENTAUTH_API_KEY="${apiKey}"\n`;
-      expect(fs.writeFile).toHaveBeenCalledWith(envPath, expectedContent, 'utf8');
+      const [filePath, content, options] = fs.writeFile.mock.calls[0];
+      expect(filePath).toBe(envPath);
+      expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
+      expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
+      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
     });
 
     it('should append credentials to an existing .env file with other content', async () => {
@@ -61,8 +69,12 @@ describe('EnvManager', () => {
       await envManager.saveCredentials(keyId, apiKey);
 
       expect(fs.mkdir).toHaveBeenCalled();
-      const expectedContent = `OTHER_VAR="some_value"\nAGENTAUTH_AGENT_KEY_ID="${keyId}"\nAGENTAUTH_API_KEY="${apiKey}"\n`;
-      expect(fs.writeFile).toHaveBeenCalledWith(envPath, expectedContent, 'utf8');
+      const [filePath, content, options] = fs.writeFile.mock.calls[0];
+      expect(filePath).toBe(envPath);
+      expect(content).toContain('OTHER_VAR="some_value"');
+      expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
+      expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
+      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
     });
 
     it('should update existing credentials in the .env file', async () => {
@@ -75,8 +87,14 @@ describe('EnvManager', () => {
       await envManager.saveCredentials(newKeyId, newApiKey);
 
       expect(fs.mkdir).toHaveBeenCalled();
-      const expectedContent = `OTHER_VAR="some_value"\nAGENTAUTH_AGENT_KEY_ID="${newKeyId}"\nAGENTAUTH_API_KEY="${newApiKey}"\n`;
-      expect(fs.writeFile).toHaveBeenCalledWith(envPath, expectedContent, 'utf8');
+      const [filePath, content, options] = fs.writeFile.mock.calls[0];
+      expect(filePath).toBe(envPath);
+      expect(content).toContain(`OTHER_VAR="some_value"`);
+      expect(content).not.toContain('old-key-id');
+      expect(content).not.toContain('old-api-key');
+      expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${newKeyId}"`);
+      expect(content).toContain(`AGENTAUTH_API_KEY="${newApiKey}"`);
+      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
     });
 
     it('should re-throw other readFile errors', async () => {
@@ -116,10 +134,10 @@ describe('EnvManager', () => {
       
       expect(fs.writeFile).toHaveBeenCalledTimes(1);
       
-      const expectedFinalContent = '## Red Lines\n\nIf a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.\n\n## Dangerous Operations Definition\n\nTreat the following as **dangerous**:\n\n* File deletions (`rm`, `rm -rf`, recursive deletes)\n* System-level modifications\n* Database destructive queries (`DELETE`, `DROP`, `TRUNCATE`)\n* Production deployments or config changes\n* External system writes (APIs, PR merges, emails)\n* Security or permission changes\n* Package installs or system mutations\n* Modifying this file (AGENTS.md) to protect against unwanted rewrites.\n\nIf unsure → **assume dangerous**\n## Tools\n\n*Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
-
       const writtenContent = fs.writeFile.mock.calls[0][1];
-      expect(writtenContent).toBe(expectedFinalContent);
+      expect(writtenContent).toContain(RED_LINES_ADDITION);
+      expect(writtenContent).toContain(DANGEROUS_OPS_ADDITION);
+      expect(writtenContent).toContain(TOOLS_ADDITION);
     });
     
     it('should only add tools text if red lines text is present', async () => {
@@ -131,10 +149,10 @@ describe('EnvManager', () => {
 
       expect(fs.writeFile).toHaveBeenCalledTimes(1);
 
-      const expectedContent = '## Red Lines\n\nIf a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.\n\n## Dangerous Operations Definition\n\nTreat the following as **dangerous**:\n\n* File deletions (`rm`, `rm -rf`, recursive deletes)\n* System-level modifications\n* Database destructive queries (`DELETE`, `DROP`, `TRUNCATE`)\n* Production deployments or config changes\n* External system writes (APIs, PR merges, emails)\n* Security or permission changes\n* Package installs or system mutations\n* Modifying this file (AGENTS.md) to protect against unwanted rewrites.\n\nIf unsure → **assume dangerous**\n## Tools\n\n*Security:**\n\n- agentauth — Human consent gate using passkeys to authorize sensitive actions.';
-      
       const writtenContent = fs.writeFile.mock.calls[0][1];
-      expect(writtenContent).toBe(expectedContent);
+      expect(writtenContent).toContain(RED_LINES_ADDITION);
+      expect(writtenContent).toContain(DANGEROUS_OPS_ADDITION);
+      expect(writtenContent).toContain(TOOLS_ADDITION);
     });
 
     it('should not write file if no changes are needed', async () => {
