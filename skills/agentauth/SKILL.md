@@ -62,7 +62,7 @@ the agent MUST handle setup through a sub-agent so the main session remains resp
 The sub-agent runs:
 
 ```bash
-./skills/agentauth/scripts/cli.cjs auth-flow --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>
+~/.openclaw/workspace/skills/agentauth/scripts/cli.cjs auth-flow --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>
 ```
 
 This command sends the user a secure setup link. The user follows the link and creates a Passkey using their device's on-screen instructions.
@@ -73,10 +73,19 @@ When complete, the sub-agent reports the final result back to the main agent.
 
 ### Main Agent Example Call
 
+// WARNING: Do NOT add sandbox, streamTo, attachAs, 
+// attachments, agentId, model, thinking, thread, 
+// cwd or resumeSessionId — these cause validation errors!
+
 ```js
 sessions_spawn({
   runtime: "subagent",
-  task: "./skills/agentauth/scripts/cli.cjs auth-flow --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>"
+  mode: "run",
+  cleanup: "delete",
+  lightContext: true,
+  label: "agentauth-approval",
+  timeoutSeconds: 300,
+  task: "~/.openclaw/workspace/skills/agentauth/scripts/cli.cjs auth-flow --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>"
 });
 
 sessions_yield();
@@ -105,6 +114,9 @@ Treat the following as **dangerous**:
 * External system writes (APIs, PR merges, emails)
 * Security or permission changes
 * Package installs or system mutations
+* Modifying the AGENTS.md to protect against unwanted rewrites.
+* Any modification, deletion, or overwriting of the ~/.agentauth directory or its contents (e.g. ~/.agentauth/.env).
+* Any modification, deletion, or overwriting of the agentauth skill directory or its contents (e.g. ~/.openclaw/workspace/skills/agentauth).
 
 If unsure → **assume dangerous**
 
@@ -133,7 +145,7 @@ To ensure the main agent remains responsive, sensitive operations MUST be handle
 The sub-agent runs:
 
 ```bash
-./skills/agentauth/scripts/cli.cjs approval-flow "<THE_ACTUAL_COMMAND_TO_EXECUTE>" "<Human-readable description>" --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>
+~/.openclaw/workspace/skills/agentauth/scripts/cli.cjs approval-flow "<THE_ACTUAL_COMMAND_TO_EXECUTE>" "<Human-readable description>" --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>
 ```
 
 This single command handles the entire workflow:
@@ -152,13 +164,45 @@ const dangerous_command = "rm ~/.openclaw/important.txt";
 const display_string = "Delete the important notes file";
 const notification_target = "slack:U12345"; // Example target
 
+// WARNING: Do NOT add sandbox, streamTo, attachAs, 
+// attachments, agentId, model, thinking, thread, 
+// cwd or resumeSessionId — these cause validation errors!
+
 sessions_spawn({
   runtime: "subagent",
-  task: `./skills/agentauth/scripts/cli.cjs approval-flow "${dangerous_command}" "${display_string}" --notify ${notification_target}`
+ mode: "run",
+  cleanup: "delete",
+  lightContext: true,
+  label: "agentauth-approval",
+  timeoutSeconds: 300,
+  task: `~/.openclaw/workspace/skills/agentauth/scripts/cli.cjs approval-flow "${dangerous_command}" "${display_string}" --notify ${notification_target}`
 });
 
 sessions_yield();
 ```
+---
+## CRITICAL: sessions_spawn Field Restrictions
+
+ONLY include these fields in sessions_spawn:
+- runtime
+- mode  
+- cleanup
+- lightContext
+- label
+- timeoutSeconds
+- task
+
+NEVER include these fields — they cause validation errors:
+- sandbox ← FORBIDDEN
+- streamTo ← FORBIDDEN  
+- attachAs ← FORBIDDEN
+- attachments ← FORBIDDEN
+- agentId ← FORBIDDEN
+- resumeSessionId ← FORBIDDEN
+- thinking ← FORBIDDEN
+- thread ← FORBIDDEN
+- model ← FORBIDDEN
+- cwd ← FORBIDDEN
 
 ---
 
