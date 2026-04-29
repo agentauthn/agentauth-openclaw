@@ -7,23 +7,12 @@
 export const APPROVAL_INIT_QUERY = `
   mutation approvalInit(
     $permissions: [PermissionInput!]!
-    $callbackUri: String!
-    $username: String
   ) {
     approvalInit(
       permissions: $permissions
-      callbackUri: $callbackUri
-      username: $username
     ) {
       approvalUrl
-      sessionId
-      username
-      permissions {
-        id
-        title
-        description
-      }
-      expiresAt
+      topic
     }
   }
 `;

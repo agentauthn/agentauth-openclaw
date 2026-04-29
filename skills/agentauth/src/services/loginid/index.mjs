@@ -44,8 +44,6 @@ export class LoginIDService {
       operationName: "approvalInit",
       query: APPROVAL_INIT_QUERY,
       variables: {
-        //NOTE: remove after
-        callbackUri: "https://localhost:3000",
         permissions: [{
           id: randomUUID(),
           title: toolCall,

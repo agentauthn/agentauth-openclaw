@@ -42,9 +42,9 @@ export class IdentityGateWay {
 
   async approvalInit(toolCall, displayString) {
     const result = await this.#loginIdService.approvalInit(toolCall, displayString);
-    const { approvalUrl, sessionId } = result;
+    const { approvalUrl, topic } = result;
 
-    return { approvalUrl, sessionId };
+    return { approvalUrl, topic };
   }
 
   async #handleSessionWait(topic, url, { notify, notificationMessage }) {
@@ -74,9 +74,9 @@ export class IdentityGateWay {
     return await this.#loginIdService.waitForSession(topic);
   }
 
-  async approvalWait(sessionId, approvalUrl, { notify } = {}) {
+  async approvalWait(topic, approvalUrl, { notify } = {}) {
     const notificationMessage = "An action requires your approval. Please visit this URL to review: {{url}}";
-    const eventData = await this.#handleSessionWait(sessionId, approvalUrl, { notify, notificationMessage });
+    const eventData = await this.#handleSessionWait(topic, approvalUrl, { notify, notificationMessage });
 
     if (eventData?.status?.toLowerCase() === "approved") {
       return JSON.stringify({ status: "approved" });
@@ -109,10 +109,10 @@ export class IdentityGateWay {
   }
 
   async approvalFlow(toolCall, displayString, { notify } = {}) {
-    const { approvalUrl, sessionId } = await this.approvalInit(toolCall, displayString);
+    const { approvalUrl, topic } = await this.approvalInit(toolCall, displayString);
 
     try {
-      const resultStr = await this.approvalWait(sessionId, approvalUrl, { notify });
+      const resultStr = await this.approvalWait(topic, approvalUrl, { notify });
       const result = JSON.parse(resultStr);
       if (result.status === "approved") {
         if (this.#commandExecutor) {
