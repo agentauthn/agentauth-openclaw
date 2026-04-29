@@ -47,10 +47,10 @@ describe('IdentityGateWay', () => {
   });
 
   describe('approvalInit', () => {
-    it('should call loginIdService.approvalInit and return approvalUrl and sessionId', async () => {
+    it('should call loginIdService.approvalInit and return approvalUrl and topic', async () => {
       const response = {
         approvalUrl: 'http://example.com/approve',
-        sessionId: '123',
+        topic: '123',
         username: 'testuser',
       };
       mockLoginIdService.approvalInit.mockResolvedValue(response);
@@ -58,7 +58,7 @@ describe('IdentityGateWay', () => {
       const result = await idgw.approvalInit('tool-call', 'display-string');
 
       expect(mockLoginIdService.approvalInit).toHaveBeenCalledWith('tool-call', 'display-string');
-      expect(result.sessionId).toBe('123');
+      expect(result.topic).toBe('123');
 
       expect(result.approvalUrl).toBe("http://example.com/approve");
     });
@@ -70,18 +70,18 @@ describe('IdentityGateWay', () => {
   });
 
   describe('createAuthSession', () => {
-    it('should create an auth session and return authUrl and sessionId', async () => {
+    it('should create an auth session and return authUrl and topic', async () => {
       const authUrl = 'http://example.com/auth';
-      const sessionId = 'test-session-id';
-      mockLoginIdService.createAuthSession.mockResolvedValue({ link: authUrl, sessionId });
+      const topic = 'test-session-id';
+      mockLoginIdService.createAuthSession.mockResolvedValue({ link: authUrl, topic });
 
       const result = await idgw.createAuthSession();
 
-      expect(result.sessionId).toBe(sessionId);
+      expect(result.topic).toBe(topic);
       expect(result.authUrl).toBe(authUrl);
     });
 
-    it('should throw an error if sessionId is not returned from service', async () => {
+    it('should throw an error if topic is not returned from service', async () => {
       const authUrl = 'http://example.com/auth';
       mockLoginIdService.createAuthSession.mockResolvedValue({ link: authUrl });
 
@@ -90,14 +90,14 @@ describe('IdentityGateWay', () => {
   });
 
   describe('approvalWait', () => {
-    const sessionId = 'test-session';
+    const topic = 'test-session';
     const approvalUrl = new URL('http://example.com/approve?sessionId=test-session');
 
     it('should send notification and wait for event if notify is provided', async () => {
       mockOpenClawService.notify.mockReturnValue(true);
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'approved' });
 
-      const result = await idgw.approvalWait(sessionId, approvalUrl, { notify: 'telegram:@me' });
+      const result = await idgw.approvalWait(topic, approvalUrl, { notify: 'telegram:@me' });
 
       expect(mockOpenClawService.notify).toHaveBeenCalledWith(
         `An action requires your approval. Please visit this URL to review: ${approvalUrl.toString()}`,
@@ -105,7 +105,7 @@ describe('IdentityGateWay', () => {
         '@me'
       );
       expect(open).not.toHaveBeenCalled();
-      expect(mockLoginIdService.waitForSession).toHaveBeenCalledWith(sessionId);
+      expect(mockLoginIdService.waitForSession).toHaveBeenCalledWith(topic);
       expect(result).toBe(JSON.stringify({ status: 'approved' }));
     });
 
@@ -113,7 +113,7 @@ describe('IdentityGateWay', () => {
       mockOpenClawService.notify.mockReturnValue(false);
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'approved' });
 
-      await idgw.approvalWait(sessionId, approvalUrl, { notify: 'telegram:@me' });
+      await idgw.approvalWait(topic, approvalUrl, { notify: 'telegram:@me' });
 
       expect(mockOpenClawService.notify).toHaveBeenCalled();
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
@@ -122,7 +122,7 @@ describe('IdentityGateWay', () => {
     it('should open browser if notify is only a channel', async () => {
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'approved' });
 
-      await idgw.approvalWait(sessionId, approvalUrl, { notify: 'telegram' });
+      await idgw.approvalWait(topic, approvalUrl, { notify: 'telegram' });
 
       expect(mockOpenClawService.notify).not.toHaveBeenCalled();
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
@@ -131,7 +131,7 @@ describe('IdentityGateWay', () => {
     it('should open browser if notify channel is webchat', async () => {
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'approved' });
 
-      await idgw.approvalWait(sessionId, approvalUrl, { notify: WEBCHAT });
+      await idgw.approvalWait(topic, approvalUrl, { notify: WEBCHAT });
 
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
       expect(mockOpenClawService.notify).not.toHaveBeenCalled();
@@ -140,7 +140,7 @@ describe('IdentityGateWay', () => {
     it('should open browser if notify channel is webchat:', async () => {
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'approved' });
 
-      await idgw.approvalWait(sessionId, approvalUrl, { notify: `${WEBCHAT}:` });
+      await idgw.approvalWait(topic, approvalUrl, { notify: `${WEBCHAT}:` });
 
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
       expect(mockOpenClawService.notify).not.toHaveBeenCalled();
@@ -149,7 +149,7 @@ describe('IdentityGateWay', () => {
     it('should not notify if approvalUrl is not provided', async () => {
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'approved' });
 
-      await idgw.approvalWait(sessionId, null, { notify: 'telegram:@me' });
+      await idgw.approvalWait(topic, null, { notify: 'telegram:@me' });
 
       expect(mockOpenClawService.notify).not.toHaveBeenCalled();
       expect(open).not.toHaveBeenCalled();
@@ -158,7 +158,7 @@ describe('IdentityGateWay', () => {
     it('should return deny if event return denied', async () => {
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'denied' });
 
-      const result = await idgw.approvalWait(sessionId, approvalUrl);
+      const result = await idgw.approvalWait(topic, approvalUrl);
 
       expect(result).toBe(JSON.stringify({ status: 'deny' }));
     });
@@ -166,7 +166,7 @@ describe('IdentityGateWay', () => {
     it('should return deny if event return is unknown', async () => {
       mockLoginIdService.waitForSession.mockResolvedValue({ some_other_prop: 'value' });
 
-      const result = await idgw.approvalWait(sessionId, approvalUrl);
+      const result = await idgw.approvalWait(topic, approvalUrl);
 
       expect(result).toBe(JSON.stringify({ status: 'deny' }));
     });
@@ -176,7 +176,7 @@ describe('IdentityGateWay', () => {
     it('should run full flow and return approved and executed', async () => {
       const initResult = {
         approvalUrl: new URL('http://example.com/approve'),
-        sessionId: '456',
+        topic: '456',
       };
       
       jest.spyOn(idgw, 'approvalInit').mockResolvedValue(initResult);
@@ -194,7 +194,7 @@ describe('IdentityGateWay', () => {
     it('should return deny if approvalWait fails', async () => {
       const initResult = {
         approvalUrl: new URL('http://example.com/approve'),
-        sessionId: '456',
+        topic: '456',
       };
       jest.spyOn(idgw, 'approvalInit').mockResolvedValue(initResult);
       jest.spyOn(idgw, 'approvalWait').mockRejectedValue(new Error('timeout'));
@@ -207,7 +207,7 @@ describe('IdentityGateWay', () => {
     it('should return deny if approval is denied', async () => {
       const initResult = {
         approvalUrl: new URL('http://example.com/approve'),
-        sessionId: '456',
+        topic: '456',
       };
       jest.spyOn(idgw, 'approvalInit').mockResolvedValue(initResult);
       jest.spyOn(idgw, 'approvalWait').mockResolvedValue(JSON.stringify({ status: 'deny' }));
@@ -222,7 +222,7 @@ describe('IdentityGateWay', () => {
     it('should successfully complete auth flow and save credentials', async () => {
       const createSessionResult = {
         authUrl: 'http://example.com/auth?s=test-session',
-        sessionId: 'test-session',
+        topic: 'test-session',
       };
       jest.spyOn(idgw, 'createAuthSession').mockResolvedValue(createSessionResult);
       const eventData = {
@@ -246,7 +246,7 @@ describe('IdentityGateWay', () => {
     it('should return failure if auth flow does not result in api_key_created', async () => {
       const createSessionResult = {
         authUrl: 'http://example.com/auth?s=test-session',
-        sessionId: 'test-session',
+        topic: 'test-session',
       };
       jest.spyOn(idgw, 'createAuthSession').mockResolvedValue(createSessionResult);
       const eventData = { status: 'some_other_status' };
