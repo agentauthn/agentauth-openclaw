@@ -1,0 +1,62 @@
+name: Deploy AgentAuth Skill
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to deploy
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+
+    steps:
+      - name: Validate tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+
+          if [[ ! "$TAG" =~ ^agentauth-skill@([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Invalid tag: $TAG"
+            exit 1
+          fi
+
+          VERSION="${BASH_REMATCH[1]}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: skills/agentauth
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        working-directory: skills/agentauth
+        run: npm run build
+
+      - name: Deploy to Clawhub
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: |
+          echo "Deploying version $VERSION"
+
+          #npx clawhub login --token "$CLAWHUB_TOKEN"
+
+          #npm run prepare:clawhub
+
+          #npx clawhub skill publish ./agentauth \
+          #--slug agentauth \
+          #--name "agentauth" \
+          #--version "$VERSION" \
+          #--tags latest \
+          #--workdir .

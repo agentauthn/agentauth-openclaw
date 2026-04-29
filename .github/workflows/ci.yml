@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'skills/agentauth/**'
+    tags:
+      - 'agentauth-skill@*'
   pull_request:
     paths:
       - 'skills/agentauth/**'
