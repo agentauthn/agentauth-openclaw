@@ -72,8 +72,8 @@ export class LoginIDService {
     return result;
   }
 
-  async waitForSession(sessionId) {
-    const url = `${this.#eventsUrl}?sessionId=${sessionId}`;
+  async waitForSession(topic) {
+    const url = `${this.#eventsUrl}?topic=${topic}`;
     return await this.#sseClient.waitForEvent(
       url,
       { eventName: "session", timeout: 60_000 * 5 }

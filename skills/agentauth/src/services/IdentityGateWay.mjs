@@ -32,12 +32,12 @@ export class IdentityGateWay {
   }
 
   async createAuthSession() {
-    const { sessionId, link: authUrl } = await this.#loginIdService.createAuthSession();
-    if (!sessionId) {
+    const { topic, link: authUrl } = await this.#loginIdService.createAuthSession();
+    if (!topic) {
       throw new Error("Authentication session is not found");
     }
 
-    return { authUrl, sessionId };
+    return { authUrl, topic };
   }
 
   async approvalInit(toolCall, displayString) {
@@ -47,7 +47,7 @@ export class IdentityGateWay {
     return { approvalUrl, sessionId };
   }
 
-  async #handleSessionWait(sessionId, url, { notify, notificationMessage }) {
+  async #handleSessionWait(topic, url, { notify, notificationMessage }) {
     if (url) {
       let notificationSent = false;
       if (notify && this.#openClawService) {
@@ -71,7 +71,7 @@ export class IdentityGateWay {
       }
     }
 
-    return await this.#loginIdService.waitForSession(sessionId);
+    return await this.#loginIdService.waitForSession(topic);
   }
 
   async approvalWait(sessionId, approvalUrl, { notify } = {}) {
@@ -90,9 +90,9 @@ export class IdentityGateWay {
     if (this.#config.hasCredentials) {
       throw new Error("Onboarding has already been completed. You cannot create another onboarding session.");
     }
-    const { authUrl, sessionId } = await this.createAuthSession();
+    const { authUrl, topic } = await this.createAuthSession();
     const notificationMessage = "Please visit this URL to complete onboarding: {{url}}";
-    const eventData = await this.#handleSessionWait(sessionId, authUrl, { notify, notificationMessage });
+    const eventData = await this.#handleSessionWait(topic, authUrl, { notify, notificationMessage });
     if (eventData?.status?.toLowerCase() === "api_key_created") {
       const { meta } = eventData;
       const { api_key, key_id } = meta;
