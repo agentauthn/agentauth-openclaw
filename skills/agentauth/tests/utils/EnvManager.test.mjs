@@ -20,9 +20,7 @@ jest.unstable_mockModule('fs/promises', () => ({
 const { EnvManager } = await import('../../src/utils/EnvManager.mjs');
 const { AGENTAUTH_ENV_PATH } = await import('../../src/utils/paths.mjs');
 const {
-  DANGEROUS_OPS_ADDITION,
-  RED_LINES_ADDITION,
-  TOOLS_ADDITION,
+  AGENTAUTH_MD_ADDITION,
 } = await import('../../src/utils/agentMarkdown.mjs');
 
 describe('EnvManager', () => {
@@ -112,71 +110,68 @@ describe('EnvManager', () => {
   });
 
   describe('updateAgentMarkdown', () => {
-    it('should not throw if AGENT.md does not exist', async () => {
+    let consoleWarnSpy;
+
+    beforeEach(() => {
+      consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should warn and do nothing if AGENTS.md does not exist', async () => {
       fs.readFile.mockRejectedValue({ code: 'ENOENT' });
 
-      await expect(envManager.updateAgentMarkdown()).resolves.not.toThrow();
+      await envManager.updateAgentMarkdown();
+      
       expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(consoleWarnSpy).toHaveBeenCalledWith('[WARN] Could not update AGENTS.md: AGENTS.md could not be found');
     });
 
-    it('should not write if AGENT.md is empty', async () => {
+    it('should add agentauth block if AGENTS.md is empty', async () => {
       fs.readFile.mockResolvedValue('');
       await envManager.updateAgentMarkdown();
-      expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        AGENTAUTH_MD_ADDITION + '\n',
+        'utf8'
+      );
     });
 
-    it('should add red lines and tools sections text when headers are present', async () => {
-      const initialContent = '## Red Lines\n\n## Tools';
+    it('should add agentauth block if it does not exist in AGENTS.md', async () => {
+      const initialContent = '## Some other content';
       fs.readFile.mockResolvedValue(initialContent);
-      fs.writeFile.mockResolvedValue();
 
       await envManager.updateAgentMarkdown();
-      
-      expect(fs.writeFile).toHaveBeenCalledTimes(1);
-      
-      const writtenContent = fs.writeFile.mock.calls[0][1];
-      expect(writtenContent).toContain(RED_LINES_ADDITION);
-      expect(writtenContent).toContain(DANGEROUS_OPS_ADDITION);
-      expect(writtenContent).toContain(TOOLS_ADDITION);
+
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        `${initialContent}\n\n${AGENTAUTH_MD_ADDITION}\n`,
+        'utf8'
+      );
     });
     
-    it('should only add tools text if red lines text is present', async () => {
-      const initialContent = '## Red Lines\n\nIf a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.\n\n## Tools';
+    it('should update agentauth block if a newer version is available', async () => {
+      const oldBlock = `<!-- AGENTAUTH-START -->
+<!-- AGENTAUTH-VERSION: 0.9.0 -->
+Old content
+<!-- AGENTAUTH-END -->`;
+      const initialContent = `Some content before\n\n${oldBlock}\n\nSome content after`;
       fs.readFile.mockResolvedValue(initialContent);
-      fs.writeFile.mockResolvedValue();
       
       await envManager.updateAgentMarkdown();
 
-      expect(fs.writeFile).toHaveBeenCalledTimes(1);
-
-      const writtenContent = fs.writeFile.mock.calls[0][1];
-      expect(writtenContent).toContain(RED_LINES_ADDITION);
-      expect(writtenContent).toContain(DANGEROUS_OPS_ADDITION);
-      expect(writtenContent).toContain(TOOLS_ADDITION);
+      const expectedContent = `Some content before\n\n${AGENTAUTH_MD_ADDITION}\n\nSome content after\n`;
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expectedContent,
+        'utf8'
+      );
     });
 
     it('should not write file if no changes are needed', async () => {
-      const initialContent = `
-## Red Lines
-
-If a dangerous action is requested (delete files, send email, modify config, purchases, production changes), use the agentauth skill for passkey approval before executing.## Dangerous Operations Definition
-
-Treat the following as **dangerous**:
-
-* File deletions (\`rm\`, \`rm -rf\`, recursive deletes)
-* System-level modifications
-* Database destructive queries (\`DELETE\`, \`DROP\`, \`TRUNCATE\`)
-* Production deployments or config changes
-* External system writes (APIs, PR merges, emails)
-* Security or permission changes
-* Package installs or system mutations
-
-If unsure → **assume dangerous**
-## Tools
-
-*Security:**
-
-- agentauth — Human consent gate using passkeys to authorize sensitive actions.`;
+      const initialContent = `Some content\n\n${AGENTAUTH_MD_ADDITION}`;
       fs.readFile.mockResolvedValue(initialContent);
 
       await envManager.updateAgentMarkdown();
@@ -184,15 +179,13 @@ If unsure → **assume dangerous**
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
 
-    it('should warn on other readFile errors', async () => {
-        const error = new Error('read error');
-        fs.readFile.mockRejectedValue(error);
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    it('should warn on other file read errors', async () => {
+      const error = new Error('read error');
+      fs.readFile.mockRejectedValue(error);
 
-        await envManager.updateAgentMarkdown();
+      await envManager.updateAgentMarkdown();
 
-        expect(consoleWarnSpy).toHaveBeenCalledWith(`[WARN] Could not update AGENT.md: ${error.message}`);
-        consoleWarnSpy.mockRestore();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(`[WARN] Could not update AGENTS.md: ${error.message}`);
     });
   });
 });
