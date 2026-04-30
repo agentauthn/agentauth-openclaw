@@ -78,7 +78,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: agentauth-build
-          path: skills/agentauth
+          path: .
 
       - name: Deploy to Clawhub
         working-directory: skills/agentauth
