@@ -54,6 +54,14 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install dependencies
+        working-directory: skills/agentauth
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        working-directory: skills/agentauth
+        run: npm run build
+
       - name: Deploy to Clawhub
         working-directory: skills/agentauth
         env:
@@ -62,9 +70,9 @@ jobs:
         run: |
           echo "Deploying version $VERSION"
 
-          npx clawhub login --token "$CLAWHUB_TOKEN"
+          ls -a
 
-          npm run build
+          npx clawhub login --token "$CLAWHUB_TOKEN"
 
           npm run prepare:clawhub
 
