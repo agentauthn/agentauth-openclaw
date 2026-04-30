@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'skills/agentauth/**'
+    tags:
+      - 'agentauth-skill@*'
   pull_request:
     paths:
       - 'skills/agentauth/**'
@@ -80,10 +82,3 @@ jobs:
       - name: Audit
         working-directory: skills/agentauth
         run: npm audit --omit=dev --audit-level=low
-
-      - name: Upload scripts artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: agentauth-scripts
-          path: skills/agentauth/scripts/
-          retention-days: 1
