@@ -5,7 +5,7 @@
  */
 
 import { randomUUID } from "crypto";
-import { APPROVAL_INIT_QUERY, CREATE_SESSION_QUERY } from "./queries.mjs";
+import { APPROVAL_INIT_QUERY, ONBOARDING_INIT_QUERY } from "./queries.mjs";
 
 export class LoginIDService {
   #httpClient;
@@ -26,14 +26,15 @@ export class LoginIDService {
 
   async createAuthSession() {
     const requestPayload = {
-      query: CREATE_SESSION_QUERY,
+      operationName: "onboardingInit",
+      query: ONBOARDING_INIT_QUERY,
     };
 
     const { data } = await this.#httpClient.post(this.#gqlUrl, requestPayload);
-    const result = data?.createSession;
+    const result = data?.onboardingInit;
 
     if (!result) {
-      throw new Error("Missing response data at `createSession`");
+      throw new Error("Missing response data at `onboardingInit`");
     }
 
     return result;
