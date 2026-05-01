@@ -8,9 +8,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { AGENTAUTH_ENV_PATH } from './paths.mjs';
 import {
-  DANGEROUS_OPS_ADDITION,
-  RED_LINES_ADDITION,
-  TOOLS_ADDITION,
+  AGENTAUTH_MD_ADDITION
 } from './agentMarkdown.mjs';
 
 export class EnvManager {
@@ -55,48 +53,54 @@ export class EnvManager {
     }
   }
 
-  #insertIntoSection(content, header, textToInsert) {
-    const headerIndex = content.indexOf(header);
-    if (headerIndex === -1) {
-      return content;
-    }
-
-    const nextHeaderIndex = content.indexOf('\n## ', headerIndex + header.length);
-
-    if (nextHeaderIndex === -1) {
-      return content.trimEnd() + textToInsert;
-    } else {
-      const sectionEnd = nextHeaderIndex;
-      const before = content.slice(0, sectionEnd).trimEnd();
-      const after = content.slice(sectionEnd);
-      return before + textToInsert + after;
-    }
-  }
-
   async updateAgentMarkdown() {
     const agentMdPath = path.join(this.#openClawDir, 'workspace', 'AGENTS.md');
     try {
-      let content = await fs.readFile(agentMdPath, 'utf8');
-      const originalContent = content;
-
-      if (!content.includes('agentauth skill for passkey approval')) {
-        content = this.#insertIntoSection(content, '## Red Lines', `\n\n${RED_LINES_ADDITION}`);
-      }
-
-      if (!content.includes('## Dangerous Operations Definition')) {
-        content = this.#insertIntoSection(content, '## Red Lines', `\n\n${DANGEROUS_OPS_ADDITION}`);
-      }
-
-      if (!content.includes('agentauth — Human consent gate')) {
-        content = this.#insertIntoSection(content, '## Tools', `\n\n${TOOLS_ADDITION}`);
+      let content;
+      try {
+        content = await fs.readFile(agentMdPath, 'utf8');
+      } catch (error) {
+        if (error.code === 'ENOENT') {
+          console.warn(`[WARN] Could not update AGENTS.md: AGENTS.md could not be found`);
+          return; // File doesn't exist → skip
+        }
+        throw error;
       }
       
-      if (originalContent !== content) {
-        await fs.writeFile(agentMdPath, content, 'utf8');
+      const originalContent = content;
+
+      const startMarker = '<!-- AGENTAUTH-START -->';
+      const endMarker = '<!-- AGENTAUTH-END -->';
+      const versionRegex = /<!-- AGENTAUTH-VERSION: (.*?) -->/;
+      
+      const newVersionMatch = AGENTAUTH_MD_ADDITION.match(versionRegex);
+      const newVersion = newVersionMatch ? newVersionMatch[1] : null;
+
+      const startIndex = content.indexOf(startMarker);
+      const endIndex = content.indexOf(endMarker, startIndex);
+
+      let newContent = content;
+
+      if (startIndex !== -1 && endIndex !== -1) {
+        const blockEndIndex = endIndex + endMarker.length;
+        const existingBlock = content.substring(startIndex, blockEndIndex);
+        const existingVersionMatch = existingBlock.match(versionRegex);
+        const existingVersion = existingVersionMatch ? existingVersionMatch[1] : null;
+
+        if (existingVersion !== newVersion) {
+          newContent = content.substring(0, startIndex) + AGENTAUTH_MD_ADDITION + content.substring(blockEndIndex);
+        }
+      } else {
+        // Section not found, add it to the end.
+        newContent = (content.trim() ? content.trimEnd() + '\n\n' : '') + AGENTAUTH_MD_ADDITION;
+      }
+      
+      if (originalContent !== newContent) {
+        await fs.writeFile(agentMdPath, newContent.trimEnd() + '\n', 'utf8');
       }
     } catch (error) {
       if (error.code !== 'ENOENT') {
-        console.warn(`[WARN] Could not update AGENT.md: ${error.message}`);
+        console.warn(`[WARN] Could not update AGENTS.md: ${error.message}`);
       }
     }
   }

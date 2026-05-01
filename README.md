@@ -76,4 +76,4 @@ cd skills/openclaw
 
 ## License
 
-Apache License 2.0
+MIT-0 © LoginID Inc.

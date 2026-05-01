@@ -10,11 +10,17 @@ import { config as loadDotenv } from "dotenv";
 import { AGENTAUTH_ENV_PATH } from "./paths.mjs";
 
 loadDotenv({ quiet: true });
-loadDotenv({ path: AGENTAUTH_ENV_PATH, quiet: true, override: true });
+const { parsed } = loadDotenv({ path: AGENTAUTH_ENV_PATH, quiet: true, override: true });
+
+const ALLOWED_IDGW_BASE_URL_PATTERNS = [
+  /^https:\/\/([a-zA-Z0-9-]+\.)*agentauth\.id/,
+  /^http:\/\/localhost:\d+/,
+];
 
 class Config {
-  constructor(env = process.env) {
+  constructor(env = parsed || {}, ambientEnv = process.env) {
     this._env = env;
+    this._ambientEnv = ambientEnv;
   }
 
   get openClawDir() {
@@ -22,7 +28,18 @@ class Config {
   }
 
   get idgwBaseUrl() {
-    return this._env.IDGW_BASE_URL || "https://agentauth.id/api";
+    const baseUrl = this._ambientEnv.IDGW_BASE_URL || "https://agentauth.id/api";
+    const isAllowed = ALLOWED_IDGW_BASE_URL_PATTERNS.some((pattern) =>
+      pattern.test(baseUrl)
+    );
+
+    if (!isAllowed) {
+      throw new Error(
+        `IDGW_BASE_URL "${baseUrl}" is not in the list of allowed origins. ` +
+          `Allowed origin patterns are: https://<ENV>.agentauth.id, https://agentauth.id, http://localhost:<PORT>.`
+      );
+    }
+    return baseUrl;
   }
 
   get notify() {
