@@ -6,7 +6,13 @@
 
 import { execFileSync } from "child_process";
 
-export class OpenClawService {
+export class NotificationService {
+  notify(message, channel, target) {
+    throw new Error("notify() must be implemented");
+  }
+}
+
+export class OpenClawNotificationService extends NotificationService {
   notify(message, channel, target) {
     try {
       const args = ["message", "send", "--channel", channel, "--message", message];
@@ -19,5 +25,17 @@ export class OpenClawService {
       console.error(`Failed to send message via OpenClaw: ${error.message}..`);
       return false;
     }
+  }
+}
+
+export class ConsoleNotificationService extends NotificationService {
+  notify(message, channel, target) {
+    console.log("[NOTIFICATION]");
+    console.log(`Channel: ${channel}`);
+    if (target) {
+      console.log(`Target: ${target}`);
+    }
+    console.log(`Message: ${message}`);
+    return true;
   }
 }

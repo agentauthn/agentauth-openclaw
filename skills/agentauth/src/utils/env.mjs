@@ -46,6 +46,10 @@ class Config {
     return this._env.AGENTAUTH_NOTIFY;
   }
 
+  get notificationChannel() {
+    return this._ambientEnv.AGENTAUTH_NOTIFICATION_CHANNEL;
+  }
+
   get hasCredentials() {
     return !!this._env.AGENTAUTH_API_KEY && !!this._env.AGENTAUTH_AGENT_KEY_ID;
   }

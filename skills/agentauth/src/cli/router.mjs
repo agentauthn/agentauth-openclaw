@@ -12,12 +12,18 @@ import { HttpClient } from '../services/HttpClient.mjs';
 import { AgentSigner } from '../utils/AgentSigner.mjs';
 import { SseClient } from '../services/SseClient.mjs';
 import { config } from '../utils/env.mjs';
-import { OpenClawService } from '../services/OpenClawService.mjs';
+import {
+  ConsoleNotificationService,
+  OpenClawNotificationService,
+} from '../services/NotificationService.mjs';
 import { LoginIDService } from '../services/loginid/index.mjs';
 import { EnvManager } from '../utils/EnvManager.mjs';
 import { CommandExecutor } from '../services/CommandExecutor.mjs';
 
-const openClawService = new OpenClawService();
+const notificationService =
+  config.notificationChannel === "stdio"
+    ? new ConsoleNotificationService()
+    : new OpenClawNotificationService();
 const envManager = new EnvManager({ openClawDir: config.openClawDir });
 const commandExecutor = new CommandExecutor();
 
@@ -31,7 +37,7 @@ const getUnauthenticatedIdgwService = () => {
   });
   return new IdentityGateWay({
     loginIdService,
-    openClawService,
+    notificationService,
     envManager,
     commandExecutor,
     config,
@@ -64,7 +70,7 @@ const getIdgwService = () => {
 
   idgwService = new IdentityGateWay({
     loginIdService,
-    openClawService,
+    notificationService,
     envManager,
     commandExecutor,
     config,
@@ -75,7 +81,7 @@ const getIdgwService = () => {
 const commandFactories = {
   'auth-flow': () => new AuthFlowCommand(getUnauthenticatedIdgwService()),
   'approval-flow': () => new ApprovalFlowCommand(getIdgwService()),
-  'test-notify': () => new TestNotifyCommand(openClawService),
+  'test-notify': () => new TestNotifyCommand(notificationService),
 };
 
 export function getCommand(commandName) {
