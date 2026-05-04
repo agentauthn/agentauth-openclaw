@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: MIT-0
  */
 
-import { CreateSessionCommand } from './commands/CreateSessionCommand.mjs';
 import { IdentityGateWay } from '../services/IdentityGateWay.mjs';
-import { WaitForSessionCommand } from './commands/WaitForSessionCommand.mjs';
 import { ApprovalFlowCommand } from './commands/ApprovalFlowCommand.mjs';
 import { AuthFlowCommand } from './commands/AuthFlowCommand.mjs';
 import { TestNotifyCommand } from './commands/TestNotifyCommand.mjs';
@@ -75,9 +73,7 @@ const getIdgwService = () => {
 };
 
 const commandFactories = {
-  'create-session': () => new CreateSessionCommand(getIdgwService()),
   'auth-flow': () => new AuthFlowCommand(getUnauthenticatedIdgwService()),
-  'wait-for-session': () => new WaitForSessionCommand(getIdgwService()),
   'approval-flow': () => new ApprovalFlowCommand(getIdgwService()),
   'test-notify': () => new TestNotifyCommand(openClawService),
 };
