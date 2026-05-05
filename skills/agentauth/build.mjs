@@ -8,6 +8,6 @@ await build({
   platform: 'node',
   target: 'node18',
   treeShaking: true,
-  minify: true,
+  minify: false,
   sourcemap: false,
 });
