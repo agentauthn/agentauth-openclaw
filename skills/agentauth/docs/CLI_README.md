@@ -74,6 +74,16 @@ Example:
 IDGW_BASE_URL=http://localhost:8090/api
 ```
 
+### Notification Channel (for Testing)
+
+Set `AGENTAUTH_NOTIFICATION_CHANNEL` to `stdio` to redirect notifications to the console instead of using the OpenClaw CLI. This is useful for testing without configuring a full notification provider.
+
+Example:
+
+```bash
+AGENTAUTH_NOTIFICATION_CHANNEL=stdio
+```
+
 ---
 
 ## Authentication (HTTP Message Signatures) - (Optional)

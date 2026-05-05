@@ -16,24 +16,6 @@ program
   .version("0.0.1");
 
 program
-  .command("create-session")
-  .description("Create a new identity session and return its URL")
-  .argument("<toolCall>", "the exact dangerous command or tool call that would be executed")
-  .argument("<displayString>", "a concise human-readable summary of the dangerous action for the approval UI")
-  .action(async (toolCall, displayString) => {
-    try {
-      const command = getCommand("create-session");
-      const result = await command.execute({ toolCall, displayString });
-      if (result) {
-        console.log(result);
-      }
-    } catch (err) {
-      console.error(err.message);
-      process.exit(1);
-    }
-  });
-
-program
   .command("auth-flow")
   .description("Starts an authentication flow for onboarding and waits for it to complete")
   .option(
@@ -47,29 +29,6 @@ program
       const result = await command.execute({ notify: notify || config.notify });
       if (result) {
         console.log(JSON.stringify(result));
-      }
-    } catch (err) {
-      console.error(err.message);
-      process.exit(1);
-    }
-  });
-
-program
-  .command("wait-for-session")
-  .description("Waits for a session to complete")
-  .argument("<sessionId>", "The session ID to wait for")
-  .argument("[approvalUrl]", "The approval URL to open")
-  .option(
-    "--notify <provider:destination>",
-    "Send notification (e.g. telegram:@mychat, slack:channel:C123, whatsapp:+123...)"
-  )
-  .action(async (sessionId, approvalUrl, options) => {
-    try {
-      const command = getCommand("wait-for-session");
-      const { notify } = options;
-      const result = await command.execute({ sessionId, approvalUrl, notify: notify || config.notify });
-      if (result) {
-        console.log(result);
       }
     } catch (err) {
       console.error(err.message);

@@ -11,7 +11,7 @@ const open = (await import('open')).default;
 
 describe('IdentityGateWay', () => {
   let mockLoginIdService;
-  let mockOpenClawService;
+  let mockNotificationService;
   let mockEnvManager;
   let mockCommandExecutor;
   let mockConfig;
@@ -23,7 +23,7 @@ describe('IdentityGateWay', () => {
       waitForSession: jest.fn(),
       createAuthSession: jest.fn(),
     };
-    mockOpenClawService = {
+    mockNotificationService = {
       notify: jest.fn(),
     };
     mockEnvManager = {
@@ -38,7 +38,7 @@ describe('IdentityGateWay', () => {
     };
     idgw = new IdentityGateWay({
       loginIdService: mockLoginIdService,
-      openClawService: mockOpenClawService,
+      notificationService: mockNotificationService,
       envManager: mockEnvManager,
       commandExecutor: mockCommandExecutor,
       config: mockConfig,
@@ -94,12 +94,12 @@ describe('IdentityGateWay', () => {
     const approvalUrl = new URL('http://example.com/approve?sessionId=test-session');
 
     it('should send notification and wait for event if notify is provided', async () => {
-      mockOpenClawService.notify.mockReturnValue(true);
+      mockNotificationService.notify.mockReturnValue(true);
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'approved' });
 
       const result = await idgw.approvalWait(topic, approvalUrl, { notify: 'telegram:@me' });
 
-      expect(mockOpenClawService.notify).toHaveBeenCalledWith(
+      expect(mockNotificationService.notify).toHaveBeenCalledWith(
         `An action requires your approval. Please visit this URL to review: ${approvalUrl.toString()}`,
         'telegram',
         '@me'
@@ -110,12 +110,12 @@ describe('IdentityGateWay', () => {
     });
 
     it('should open browser if notification fails', async () => {
-      mockOpenClawService.notify.mockReturnValue(false);
+      mockNotificationService.notify.mockReturnValue(false);
       mockLoginIdService.waitForSession.mockResolvedValue({ status: 'approved' });
 
       await idgw.approvalWait(topic, approvalUrl, { notify: 'telegram:@me' });
 
-      expect(mockOpenClawService.notify).toHaveBeenCalled();
+      expect(mockNotificationService.notify).toHaveBeenCalled();
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
     });
 
@@ -124,7 +124,7 @@ describe('IdentityGateWay', () => {
 
       await idgw.approvalWait(topic, approvalUrl, { notify: 'telegram' });
 
-      expect(mockOpenClawService.notify).not.toHaveBeenCalled();
+      expect(mockNotificationService.notify).not.toHaveBeenCalled();
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
     });
 
@@ -134,7 +134,7 @@ describe('IdentityGateWay', () => {
       await idgw.approvalWait(topic, approvalUrl, { notify: WEBCHAT });
 
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
-      expect(mockOpenClawService.notify).not.toHaveBeenCalled();
+      expect(mockNotificationService.notify).not.toHaveBeenCalled();
     });
 
     it('should open browser if notify channel is webchat:', async () => {
@@ -143,7 +143,7 @@ describe('IdentityGateWay', () => {
       await idgw.approvalWait(topic, approvalUrl, { notify: `${WEBCHAT}:` });
 
       expect(open).toHaveBeenCalledWith(approvalUrl.toString());
-      expect(mockOpenClawService.notify).not.toHaveBeenCalled();
+      expect(mockNotificationService.notify).not.toHaveBeenCalled();
     });
 
     it('should not notify if approvalUrl is not provided', async () => {
@@ -151,7 +151,7 @@ describe('IdentityGateWay', () => {
 
       await idgw.approvalWait(topic, null, { notify: 'telegram:@me' });
 
-      expect(mockOpenClawService.notify).not.toHaveBeenCalled();
+      expect(mockNotificationService.notify).not.toHaveBeenCalled();
       expect(open).not.toHaveBeenCalled();
     });
 

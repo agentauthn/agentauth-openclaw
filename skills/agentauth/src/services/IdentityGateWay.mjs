@@ -9,24 +9,24 @@ import { WEBCHAT, parseNotify } from "../utils/notifications.mjs";
 
 export class IdentityGateWay {
   #loginIdService;
-  #openClawService;
+  #notificationService;
   #envManager;
   #commandExecutor;
   #config;
 
-  constructor({ loginIdService, openClawService, envManager, commandExecutor, config }) {
+  constructor({ loginIdService, notificationService, envManager, commandExecutor, config }) {
     this.#loginIdService = loginIdService;
-    this.#openClawService = openClawService;
+    this.#notificationService = notificationService;
     this.#envManager = envManager;
     this.#commandExecutor = commandExecutor;
     this.#config = config;
   }
 
   #notify(notify, message) {
-    if (notify && this.#openClawService) {
+    if (notify && this.#notificationService) {
       const { channel, target } = parseNotify(notify);
       if (channel && target) {
-        this.#openClawService.notify(message, channel, target);
+        this.#notificationService.notify(message, channel, target);
       }
     }
   }
@@ -50,14 +50,14 @@ export class IdentityGateWay {
   async #handleSessionWait(topic, url, { notify, notificationMessage }) {
     if (url) {
       let notificationSent = false;
-      if (notify && this.#openClawService) {
+      if (notify && this.#notificationService) {
         const { channel, target } = parseNotify(notify);
         if (channel === WEBCHAT) {
           open(url.toString());
           notificationSent = true;
         } else if (channel && target) {
           const message = notificationMessage.replace("{{url}}", url.toString());
-          notificationSent = this.#openClawService.notify(
+          notificationSent = this.#notificationService.notify(
             message,
             channel,
             target
