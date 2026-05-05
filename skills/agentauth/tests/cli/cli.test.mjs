@@ -37,20 +37,6 @@ describe('CLI main', () => {
     processExitSpy.mockRestore();
   });
 
-  it('should execute create-session command with correct arguments', async () => {
-    mockExecute.mockResolvedValue({ sessionId: '123' });
-
-    await runCli(['create-session', 'test-tool-call', 'test-display-string']);
-
-    expect(mockGetCommand).toHaveBeenCalledWith('create-session');
-    expect(mockExecute).toHaveBeenCalledWith({
-      toolCall: 'test-tool-call',
-      displayString: 'test-display-string',
-    });
-    expect(console.log).toHaveBeenCalledWith({ sessionId: '123' });
-    expect(process.exit).not.toHaveBeenCalled();
-  });
-
   it('should execute approval-flow and log the result as JSON string', async () => {
     mockExecute.mockResolvedValue({ status: 'approved' });
 
@@ -70,9 +56,9 @@ describe('CLI main', () => {
     const error = new Error('Command failed');
     mockExecute.mockRejectedValue(error);
 
-    await runCli(['create-session', 'tool', 'display']);
+    await runCli(['approval-flow', 'tool', 'display', '--notify', 'test']);
 
-    expect(mockGetCommand).toHaveBeenCalledWith('create-session');
+    expect(mockGetCommand).toHaveBeenCalledWith('approval-flow');
     expect(console.error).toHaveBeenCalledWith(error.message);
     expect(process.exit).toHaveBeenCalledWith(1);
   });
