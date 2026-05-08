@@ -115,7 +115,7 @@ Treat the following as **dangerous**:
 * Security or permission changes
 * Package installs or system mutations
 * Modifying the AGENTS.md to protect against unwanted rewrites.
-* Any modification, deletion, or overwriting of the ~/.agentauth directory or its contents (e.g. ~/.agentauth/.env).
+* Any modification, deletion, or overwriting of the OpenClaw environment file (e.g. ~/.openclaw/.env).
 * Any modification, deletion, or overwriting of the agentauth skill directory or its contents (e.g. ~/.openclaw/workspace/skills/agentauth).
 
 If unsure → **assume dangerous**
