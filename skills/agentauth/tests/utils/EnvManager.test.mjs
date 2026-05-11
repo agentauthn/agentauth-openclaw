@@ -18,7 +18,6 @@ jest.unstable_mockModule('fs/promises', () => ({
 }));
 
 const { EnvManager } = await import('../../src/utils/EnvManager.mjs');
-const { AGENTAUTH_ENV_PATH } = await import('../../src/utils/paths.mjs');
 const {
   AGENTAUTH_MD_ADDITION,
 } = await import('../../src/utils/agentMarkdown.mjs');
@@ -35,23 +34,20 @@ describe('EnvManager', () => {
   describe('saveCredentials', () => {
     const keyId = 'test-key-id';
     const apiKey = 'test-api-key';
-    const envPath = AGENTAUTH_ENV_PATH;
+    const envPath = path.join(openClawDir, '.env');
 
-    it('should throw an error if agentauth directory cannot be created', async () => {
+    it('should throw an error if .env file does not exist', async () => {
       fs.readFile.mockRejectedValue({ code: 'ENOENT' });
-      fs.writeFile.mockRejectedValue({ code: 'ENOENT' });
 
-      await expect(envManager.saveCredentials(keyId, apiKey)).rejects.toThrow('the api key could not be saved because agentauth directory cannot be created.');
-      expect(fs.mkdir).toHaveBeenCalled();
+      await expect(envManager.saveCredentials(keyId, apiKey)).rejects.toThrow(`OpenClaw environment file not found at ${envPath}. Cannot save credentials.`);
     });
 
-    it('should save credentials to a new .env file if directory exists', async () => {
-      fs.readFile.mockRejectedValue({ code: 'ENOENT' });
+    it('should save credentials to an empty .env file', async () => {
+      fs.readFile.mockResolvedValue('');
       fs.writeFile.mockResolvedValue();
 
       await envManager.saveCredentials(keyId, apiKey);
 
-      expect(fs.mkdir).toHaveBeenCalled();
       const [filePath, content, options] = fs.writeFile.mock.calls[0];
       expect(filePath).toBe(envPath);
       expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
@@ -66,7 +62,6 @@ describe('EnvManager', () => {
 
       await envManager.saveCredentials(keyId, apiKey);
 
-      expect(fs.mkdir).toHaveBeenCalled();
       const [filePath, content, options] = fs.writeFile.mock.calls[0];
       expect(filePath).toBe(envPath);
       expect(content).toContain('OTHER_VAR="some_value"');
@@ -84,7 +79,6 @@ describe('EnvManager', () => {
       
       await envManager.saveCredentials(newKeyId, newApiKey);
 
-      expect(fs.mkdir).toHaveBeenCalled();
       const [filePath, content, options] = fs.writeFile.mock.calls[0];
       expect(filePath).toBe(envPath);
       expect(content).toContain(`OTHER_VAR="some_value"`);
@@ -105,7 +99,7 @@ describe('EnvManager', () => {
       fs.readFile.mockResolvedValue('');
       const error = new Error('write error');
       fs.writeFile.mockRejectedValue(error);
-      await expect(envManager.saveCredentials(keyId, apiKey)).rejects.toThrow(error);
+      await expect(envManager.saveCredentials(keyId, apiKey)).rejects.toThrow(`Could not save credentials to OpenClaw environment file at ${envPath}: ${error.message}`);
     });
   });
 

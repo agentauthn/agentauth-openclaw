@@ -62,7 +62,7 @@ cd <your-repo>
 Navigate to an skill or extension:
 
 ```bash
-cd skills/openclaw
+cd skills/agentauth/
 ```
 
 ---
