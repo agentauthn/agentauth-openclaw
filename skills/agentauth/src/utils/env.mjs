@@ -24,7 +24,11 @@ class Config {
   }
 
   get openClawDir() {
-    return this._env.OPENCLAW_HOME || path.join(os.homedir(), ".openclaw");
+    if (this._ambientEnv.OPENCLAW_STATE_DIR) {
+      return this._ambientEnv.OPENCLAW_STATE_DIR;
+    }
+    const home = this._ambientEnv.OPENCLAW_HOME || os.homedir();
+    return path.join(home, ".openclaw");
   }
 
   get idgwBaseUrl() {

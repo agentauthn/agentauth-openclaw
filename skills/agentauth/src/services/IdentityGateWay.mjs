@@ -6,6 +6,7 @@
 
 import open from "open";
 import { WEBCHAT, parseNotify } from "../utils/notifications.mjs";
+import { redact } from "../utils/redact.mjs";
 
 export class IdentityGateWay {
   #loginIdService;
@@ -41,7 +42,9 @@ export class IdentityGateWay {
   }
 
   async approvalInit(toolCall, displayString) {
-    const result = await this.#loginIdService.approvalInit(toolCall, displayString);
+    const redactedToolCall = redact(toolCall);
+    const redactedDisplayString = redact(displayString);
+    const result = await this.#loginIdService.approvalInit(redactedToolCall, redactedDisplayString);
     const { approvalUrl, topic } = result;
 
     return { approvalUrl, topic };

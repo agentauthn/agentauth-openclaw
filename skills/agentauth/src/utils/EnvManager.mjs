@@ -6,7 +6,6 @@
 
 import path from 'path';
 import fs from 'fs/promises';
-import { AGENTAUTH_ENV_PATH } from './paths.mjs';
 import {
   AGENTAUTH_MD_ADDITION
 } from './agentMarkdown.mjs';
@@ -19,16 +18,20 @@ export class EnvManager {
   }
 
   async saveCredentials(keyId, apiKey) {
-    const envPath = AGENTAUTH_ENV_PATH;
-    await fs.mkdir(path.dirname(envPath), { recursive: true, mode: 0o700 });
+    const envPath = path.join(this.#openClawDir, '.env');
 
-    let lines = [];
+    let envContent;
     try {
-      const envContent = await fs.readFile(envPath, 'utf8');
-      lines = envContent.split('\n');
+      envContent = await fs.readFile(envPath, 'utf8');
     } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
+      if (error.code === 'ENOENT') {
+        throw new Error(
+          `OpenClaw environment file not found at ${envPath}. Cannot save credentials.`
+        );
+      }
+      throw error;
     }
+    const lines = envContent.split('\n');
 
     const otherLines = lines.filter(line => 
       !line.startsWith('AGENTAUTH_AGENT_KEY_ID=') &&
@@ -46,10 +49,7 @@ export class EnvManager {
       // Read only
       await fs.writeFile(envPath, newLines.join('\n') + '\n', { encoding: 'utf8', mode: 0o400 });
     } catch (error) {
-      if (error.code === 'ENOENT') {
-        throw new Error('the api key could not be saved because agentauth directory cannot be created.');
-      }
-      throw error;
+      throw new Error(`Could not save credentials to OpenClaw environment file at ${envPath}: ${error.message}`);
     }
   }
 
