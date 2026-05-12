@@ -31,6 +31,18 @@ agentauth adds a cryptographic consent layer: before your agent executes anythin
 
 ---
 
+## Data Security and Redaction
+
+To facilitate out-of-band approval, the `toolCall` and `displayString` are sent to the AgentAuth service. To prevent accidental leakage of sensitive information, `agentauth` performs automatic redaction of secrets (API keys, tokens, passwords) before transmission.
+
+**Best Practices:**
+
+- **Sensitive Data in Commands:** While `agentauth` redacts known secret patterns, avoid including unnecessary sensitive details like internal file paths or infrastructure specifics in the `toolCall` or `displayString`.
+- **`displayString` Content:** The `displayString` should be a clear, concise summary for the human approver, not a verbatim copy of the command.
+- **Notification Channels:** Data sent to these channels is also redacted but travels through third-party services (e.g., Slack, Telegram).
+
+---
+
 ## Initial Setup: Initialize My AgentAuth
 
 Before approvals can be used, the user must register their authentication credentials.
@@ -73,7 +85,7 @@ When complete, the sub-agent reports the final result back to the main agent.
 
 ### Main Agent Example Call
 
-// WARNING: Do NOT add sandbox, streamTo, attachAs, 
+// WARNING: Do NOT add streamTo, attachAs, 
 // attachments, agentId, model, thinking, thread, 
 // cwd or resumeSessionId — these cause validation errors!
 
@@ -164,7 +176,7 @@ const dangerous_command = "rm ~/.openclaw/important.txt";
 const display_string = "Delete the important notes file";
 const notification_target = "slack:U12345"; // Example target
 
-// WARNING: Do NOT add sandbox, streamTo, attachAs, 
+// WARNING: Do NOT add streamTo, attachAs, 
 // attachments, agentId, model, thinking, thread, 
 // cwd or resumeSessionId — these cause validation errors!
 
@@ -193,7 +205,6 @@ ONLY include these fields in sessions_spawn:
 - task
 
 NEVER include these fields — they cause validation errors:
-- sandbox ← FORBIDDEN
 - streamTo ← FORBIDDEN  
 - attachAs ← FORBIDDEN
 - attachments ← FORBIDDEN
