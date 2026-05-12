@@ -32,7 +32,7 @@ class Config {
   }
 
   get idgwBaseUrl() {
-    const baseUrl = this._ambientEnv.IDGW_BASE_URL || "https://agentauth.id/api";
+    const baseUrl = this._ambientEnv.IDGW_BASE_URL || "https://consent.agentauth.id/api";
     const isAllowed = ALLOWED_IDGW_BASE_URL_PATTERNS.some((pattern) =>
       pattern.test(baseUrl)
     );
