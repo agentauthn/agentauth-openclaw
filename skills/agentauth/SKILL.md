@@ -73,7 +73,7 @@ When complete, the sub-agent reports the final result back to the main agent.
 
 ### Main Agent Example Call
 
-// WARNING: Do NOT add sandbox, streamTo, attachAs, 
+// WARNING: Do NOT add streamTo, attachAs, 
 // attachments, agentId, model, thinking, thread, 
 // cwd or resumeSessionId — these cause validation errors!
 
@@ -164,7 +164,7 @@ const dangerous_command = "rm ~/.openclaw/important.txt";
 const display_string = "Delete the important notes file";
 const notification_target = "slack:U12345"; // Example target
 
-// WARNING: Do NOT add sandbox, streamTo, attachAs, 
+// WARNING: Do NOT add streamTo, attachAs, 
 // attachments, agentId, model, thinking, thread, 
 // cwd or resumeSessionId — these cause validation errors!
 
@@ -193,7 +193,6 @@ ONLY include these fields in sessions_spawn:
 - task
 
 NEVER include these fields — they cause validation errors:
-- sandbox ← FORBIDDEN
 - streamTo ← FORBIDDEN  
 - attachAs ← FORBIDDEN
 - attachments ← FORBIDDEN
