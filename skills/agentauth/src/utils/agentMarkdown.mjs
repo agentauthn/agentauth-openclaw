@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: MIT-0
  */
 
-const AGENTAUTH_MD_VERSION = "1.0.0";
+const AGENTAUTH_PROMPT_VERSION = "1.0.0";
 
 export const AGENTAUTH_MD_ADDITION = `<!-- AGENTAUTH-START -->
-<!-- AGENTAUTH-VERSION: ${AGENTAUTH_MD_VERSION} -->
+<!-- AGENTAUTH-PROMPT-VERSION: ${AGENTAUTH_PROMPT_VERSION} -->
 ## Security (AgentAuth)
 
 ### Red Lines
@@ -33,3 +33,9 @@ If unsure → **assume dangerous**
 ### Tool
 * **agentauth** — Human consent gate using passkeys to authorize sensitive actions.
 <!-- AGENTAUTH-END -->`;
+
+export const ASK_FIRST_HEADER = `**Ask first:**`;
+export const ASK_FIRST_LIST = `- Sending emails, tweets, public posts
+- Anything that leaves the machine
+- Anything you're uncertain about`;
+export const ASK_FIRST_BLOCK = `${ASK_FIRST_HEADER}\n\n${ASK_FIRST_LIST}`;

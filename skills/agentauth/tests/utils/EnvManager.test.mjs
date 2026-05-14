@@ -20,6 +20,8 @@ jest.unstable_mockModule('fs/promises', () => ({
 const { EnvManager } = await import('../../src/utils/EnvManager.mjs');
 const {
   AGENTAUTH_MD_ADDITION,
+  ASK_FIRST_LIST,
+  ASK_FIRST_BLOCK,
 } = await import('../../src/utils/agentMarkdown.mjs');
 
 describe('EnvManager', () => {
@@ -36,10 +38,17 @@ describe('EnvManager', () => {
     const apiKey = 'test-api-key';
     const envPath = path.join(openClawDir, '.env');
 
-    it('should throw an error if .env file does not exist', async () => {
+    it('should create a new .env file if it does not exist', async () => {
       fs.readFile.mockRejectedValue({ code: 'ENOENT' });
+      fs.writeFile.mockResolvedValue();
 
-      await expect(envManager.saveCredentials(keyId, apiKey)).rejects.toThrow(`OpenClaw environment file not found at ${envPath}. Cannot save credentials.`);
+      await envManager.saveCredentials(keyId, apiKey);
+
+      const [filePath, content, options] = fs.writeFile.mock.calls[0];
+      expect(filePath).toBe(envPath);
+      expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
+      expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
+      expect(options).toEqual({ encoding: 'utf8' });
     });
 
     it('should save credentials to an empty .env file', async () => {
@@ -52,7 +61,7 @@ describe('EnvManager', () => {
       expect(filePath).toBe(envPath);
       expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
       expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
-      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
+      expect(options).toEqual({ encoding: 'utf8' });
     });
 
     it('should append credentials to an existing .env file with other content', async () => {
@@ -67,7 +76,7 @@ describe('EnvManager', () => {
       expect(content).toContain('OTHER_VAR="some_value"');
       expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
       expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
-      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
+      expect(options).toEqual({ encoding: 'utf8' });
     });
 
     it('should update existing credentials in the .env file', async () => {
@@ -86,7 +95,7 @@ describe('EnvManager', () => {
       expect(content).not.toContain('old-api-key');
       expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${newKeyId}"`);
       expect(content).toContain(`AGENTAUTH_API_KEY="${newApiKey}"`);
-      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
+      expect(options).toEqual({ encoding: 'utf8' });
     });
 
     it('should re-throw other readFile errors', async () => {
@@ -148,7 +157,7 @@ describe('EnvManager', () => {
     
     it('should update agentauth block if a newer version is available', async () => {
       const oldBlock = `<!-- AGENTAUTH-START -->
-<!-- AGENTAUTH-VERSION: 0.9.0 -->
+<!-- AGENTAUTH-PROMPT-VERSION: 0.9.0 -->
 Old content
 <!-- AGENTAUTH-END -->`;
       const initialContent = `Some content before\n\n${oldBlock}\n\nSome content after`;
@@ -171,6 +180,36 @@ Old content
       await envManager.updateAgentMarkdown();
 
       expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('should remove "Ask first" block if it exists', async () => {
+      // Content has up-to-date agentauth block and the "Ask first" block.
+      const initialContent = `${AGENTAUTH_MD_ADDITION}\n\n${ASK_FIRST_BLOCK}`;
+      fs.readFile.mockResolvedValue(initialContent);
+
+      await envManager.updateAgentMarkdown();
+
+      // The `askFirstBlock` should be removed completely.
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        `${AGENTAUTH_MD_ADDITION}\n`,
+        'utf8'
+      );
+    });
+
+    it('should remove "Ask first" block and preserve following content', async () => {
+      const followingContent = '## Next Section\n\nSome more text.';
+      const initialContent = `${AGENTAUTH_MD_ADDITION}\n\n${ASK_FIRST_BLOCK}\n\n${followingContent}`;
+      fs.readFile.mockResolvedValue(initialContent);
+
+      await envManager.updateAgentMarkdown();
+
+      const expectedContent = `${AGENTAUTH_MD_ADDITION}\n\n${followingContent}\n`;
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expectedContent,
+        'utf8'
+      );
     });
 
     it('should warn on other file read errors', async () => {
