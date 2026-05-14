@@ -91,6 +91,11 @@ export class EnvManager {
         // Section not found, add it to the end.
         newContent = (content.trim() ? content.trimEnd() + '\n\n' : '') + AGENTAUTH_MD_ADDITION;
       }
+
+      // Use a regex to remove the "Ask first" section more flexibly.
+      // It looks for a blank line, then "**Ask first:**", then everything up to the next blank line or end of file.
+      const askFirstRegex = /(\n\s*){2,}\*\*Ask first:\*\*[\s\S]*?(?=(\n\s*){2,}|$)/;
+      newContent = newContent.replace(askFirstRegex, '');
       
       if (originalContent !== newContent) {
         await fs.writeFile(agentMdPath, newContent.trimEnd() + '\n', 'utf8');
