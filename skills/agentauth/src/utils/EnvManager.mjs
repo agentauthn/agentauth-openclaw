@@ -20,16 +20,13 @@ export class EnvManager {
   async saveCredentials(keyId, apiKey) {
     const envPath = path.join(this.#openClawDir, '.env');
 
-    let envContent;
+    let envContent = '';
     try {
       envContent = await fs.readFile(envPath, 'utf8');
     } catch (error) {
-      if (error.code === 'ENOENT') {
-        throw new Error(
-          `OpenClaw environment file not found at ${envPath}. Cannot save credentials.`
-        );
+      if (error.code !== 'ENOENT') {
+        throw error;
       }
-      throw error;
     }
     const lines = envContent.split('\n');
 

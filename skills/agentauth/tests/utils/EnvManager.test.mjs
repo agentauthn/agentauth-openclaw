@@ -36,10 +36,17 @@ describe('EnvManager', () => {
     const apiKey = 'test-api-key';
     const envPath = path.join(openClawDir, '.env');
 
-    it('should throw an error if .env file does not exist', async () => {
+    it('should create a new .env file if it does not exist', async () => {
       fs.readFile.mockRejectedValue({ code: 'ENOENT' });
+      fs.writeFile.mockResolvedValue();
 
-      await expect(envManager.saveCredentials(keyId, apiKey)).rejects.toThrow(`OpenClaw environment file not found at ${envPath}. Cannot save credentials.`);
+      await envManager.saveCredentials(keyId, apiKey);
+
+      const [filePath, content, options] = fs.writeFile.mock.calls[0];
+      expect(filePath).toBe(envPath);
+      expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
+      expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
+      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
     });
 
     it('should save credentials to an empty .env file', async () => {
