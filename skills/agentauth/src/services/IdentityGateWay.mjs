@@ -8,6 +8,12 @@ import open from "open";
 import { WEBCHAT, parseNotify } from "../utils/notifications.mjs";
 import { redact } from "../utils/redact.mjs";
 
+const APPROVAL_STATUS = {
+  APPROVED: "approved",
+  DENIED: "deny",
+  API_KEY_CREATED: "api_key_created",
+};
+
 export class IdentityGateWay {
   #loginIdService;
   #notificationService;
@@ -81,7 +87,7 @@ export class IdentityGateWay {
     const notificationMessage = "An action requires your approval. Please visit this URL to review: {{url}}";
     const eventData = await this.#handleSessionWait(topic, approvalUrl, { notify, notificationMessage });
 
-    if (eventData?.status?.toLowerCase() === "approved") {
+    if (eventData?.status?.toLowerCase() === APPROVAL_STATUS.APPROVED) {
       return JSON.stringify({ status: "approved" });
     } else {
       this.#notify(notify, "The action was denied.");
@@ -96,7 +102,7 @@ export class IdentityGateWay {
     const { authUrl, topic } = await this.createAuthSession();
     const notificationMessage = "Please visit this URL to complete onboarding: {{url}}";
     const eventData = await this.#handleSessionWait(topic, authUrl, { notify, notificationMessage });
-    if (eventData?.status?.toLowerCase() === "api_key_created") {
+    if (eventData?.status?.toLowerCase() === APPROVAL_STATUS.API_KEY_CREATED) {
       const { meta } = eventData;
       const { api_key, key_id } = meta;
 
@@ -117,7 +123,7 @@ export class IdentityGateWay {
     try {
       const resultStr = await this.approvalWait(topic, approvalUrl, { notify });
       const result = JSON.parse(resultStr);
-      if (result.status === "approved") {
+      if (result.status === APPROVAL_STATUS.APPROVED) {
         if (this.#commandExecutor) {
           const { error, stdout, stderr } = await this.#commandExecutor.execute(toolCall);
           if (error) {
@@ -151,9 +157,22 @@ export class IdentityGateWay {
     }
   }
 
-  async uninstall() {
-    await this.#envManager.restoreAgentMarkdown();
+  async cleanupFlow({ notify } = {}) {
+    const actionDescription = "Uninstall AgentAuth skill";
 
-    console.log("AgentAuth cleanup completed");
+    const { approvalUrl, topic } = await this.approvalInit(
+      actionDescription,
+      actionDescription
+    );
+
+    const resultStr = await this.approvalWait(topic, approvalUrl, { notify });
+    const result = JSON.parse(resultStr);
+
+    if (result.status === APPROVAL_STATUS.APPROVED) {
+      await this.#envManager.restoreAgentMarkdown();
+      console.log("AgentAuth cleanup completed");
+    } else {
+      console.log("AgentAuth cleanup was denied.");
+    }
   }
 }

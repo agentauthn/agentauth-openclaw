@@ -87,10 +87,15 @@ program
 program
   .command("cleanup")
   .description("Restores original configuration and removes AgentAuth integrations. Run before uninstalling the AgentAuth skill.")
-  .action(async () => {
+  .option(
+    "--notify <provider:destination>",
+    "Send notification (e.g. telegram:@mychat, slack:channel:C123, whatsapp:+123...)"
+  )
+  .action(async (options) => {
     try {
       const command = getCommand("cleanup");
-      await command.execute();
+      const { notify } = options;
+      await command.execute({ notify: notify || config.notify });
     } catch (err) {
       console.error(err.message);
       process.exit(1);

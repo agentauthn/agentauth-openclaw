@@ -12,7 +12,8 @@ export class CleanupCommand extends BaseCommand {
     this.idgwService = idgwService;
   }
 
-  async execute() {
-    await this.idgwService.uninstall();
+  async execute(args) {
+    const { notify } = args;
+    return this.idgwService.cleanupFlow({ notify });
   }
 }

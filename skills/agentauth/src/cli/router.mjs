@@ -83,7 +83,7 @@ const commandFactories = {
   'auth-flow': () => new AuthFlowCommand(getUnauthenticatedIdgwService()),
   'approval-flow': () => new ApprovalFlowCommand(getIdgwService()),
   'test-notify': () => new TestNotifyCommand(notificationService),
-  'cleanup': () => new CleanupCommand(getUnauthenticatedIdgwService()),
+  'cleanup': () => new CleanupCommand(getIdgwService()),
 };
 
 export function getCommand(commandName) {
