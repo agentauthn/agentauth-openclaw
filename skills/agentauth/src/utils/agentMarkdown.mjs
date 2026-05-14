@@ -33,3 +33,9 @@ If unsure → **assume dangerous**
 ### Tool
 * **agentauth** — Human consent gate using passkeys to authorize sensitive actions.
 <!-- AGENTAUTH-END -->`;
+
+export const ASK_FIRST_HEADER = `**Ask first:**`;
+export const ASK_FIRST_LIST = `- Sending emails, tweets, public posts
+- Anything that leaves the machine
+- Anything you're uncertain about`;
+export const ASK_FIRST_BLOCK = `${ASK_FIRST_HEADER}\n\n${ASK_FIRST_LIST}`;

@@ -48,7 +48,7 @@ describe('EnvManager', () => {
       expect(filePath).toBe(envPath);
       expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
       expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
-      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
+      expect(options).toEqual({ encoding: 'utf8' });
     });
 
     it('should save credentials to an empty .env file', async () => {
@@ -61,7 +61,7 @@ describe('EnvManager', () => {
       expect(filePath).toBe(envPath);
       expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
       expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
-      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
+      expect(options).toEqual({ encoding: 'utf8' });
     });
 
     it('should append credentials to an existing .env file with other content', async () => {
@@ -76,7 +76,7 @@ describe('EnvManager', () => {
       expect(content).toContain('OTHER_VAR="some_value"');
       expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${keyId}"`);
       expect(content).toContain(`AGENTAUTH_API_KEY="${apiKey}"`);
-      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
+      expect(options).toEqual({ encoding: 'utf8' });
     });
 
     it('should update existing credentials in the .env file', async () => {
@@ -95,7 +95,7 @@ describe('EnvManager', () => {
       expect(content).not.toContain('old-api-key');
       expect(content).toContain(`AGENTAUTH_AGENT_KEY_ID="${newKeyId}"`);
       expect(content).toContain(`AGENTAUTH_API_KEY="${newApiKey}"`);
-      expect(options).toEqual({ encoding: 'utf8', mode: 0o400 });
+      expect(options).toEqual({ encoding: 'utf8' });
     });
 
     it('should re-throw other readFile errors', async () => {

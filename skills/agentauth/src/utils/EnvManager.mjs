@@ -43,8 +43,7 @@ export class EnvManager {
     ];
 
     try {
-      // Read only
-      await fs.writeFile(envPath, newLines.join('\n') + '\n', { encoding: 'utf8', mode: 0o400 });
+      await fs.writeFile(envPath, newLines.join('\n') + '\n', { encoding: 'utf8' });
     } catch (error) {
       throw new Error(`Could not save credentials to OpenClaw environment file at ${envPath}: ${error.message}`);
     }
