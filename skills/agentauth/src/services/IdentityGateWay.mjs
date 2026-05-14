@@ -150,4 +150,10 @@ export class IdentityGateWay {
       };
     }
   }
+
+  async uninstall() {
+    await this.#envManager.restoreAgentMarkdown();
+
+    console.log("AgentAuth cleanup completed");
+  }
 }

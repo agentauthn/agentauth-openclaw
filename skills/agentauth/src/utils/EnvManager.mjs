@@ -133,4 +133,8 @@ export class EnvManager {
 
     return [before, after].filter(Boolean).join('\n\n');
   }
+
+  async restoreAgentMarkdown() {
+    // This will be implemented in a future step.
+  }
 }

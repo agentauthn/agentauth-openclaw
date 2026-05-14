@@ -8,6 +8,7 @@ import { IdentityGateWay } from '../services/IdentityGateWay.mjs';
 import { ApprovalFlowCommand } from './commands/ApprovalFlowCommand.mjs';
 import { AuthFlowCommand } from './commands/AuthFlowCommand.mjs';
 import { TestNotifyCommand } from './commands/TestNotifyCommand.mjs';
+import { CleanupCommand } from './commands/CleanupCommand.mjs';
 import { HttpClient } from '../services/HttpClient.mjs';
 import { AgentSigner } from '../utils/AgentSigner.mjs';
 import { SseClient } from '../services/SseClient.mjs';
@@ -82,6 +83,7 @@ const commandFactories = {
   'auth-flow': () => new AuthFlowCommand(getUnauthenticatedIdgwService()),
   'approval-flow': () => new ApprovalFlowCommand(getIdgwService()),
   'test-notify': () => new TestNotifyCommand(notificationService),
+  'cleanup': () => new CleanupCommand(getUnauthenticatedIdgwService()),
 };
 
 export function getCommand(commandName) {

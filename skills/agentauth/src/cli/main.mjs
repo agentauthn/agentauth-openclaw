@@ -84,4 +84,17 @@ program
     }
   });
 
+program
+  .command("cleanup")
+  .description("Restores original configuration and removes AgentAuth integrations. Run before uninstalling the AgentAuth skill.")
+  .action(async () => {
+    try {
+      const command = getCommand("cleanup");
+      await command.execute();
+    } catch (err) {
+      console.error(err.message);
+      process.exit(1);
+    }
+  });
+
 program.parse();
