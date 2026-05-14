@@ -68,7 +68,7 @@ export class EnvManager {
 
       const startMarker = '<!-- AGENTAUTH-START -->';
       const endMarker = '<!-- AGENTAUTH-END -->';
-      const versionRegex = /<!-- AGENTAUTH-VERSION: (.*?) -->/;
+      const versionRegex = /<!-- AGENTAUTH-PROMPT-VERSION: (.*?) -->/;
       
       const newVersionMatch = AGENTAUTH_MD_ADDITION.match(versionRegex);
       const newVersion = newVersionMatch ? newVersionMatch[1] : null;

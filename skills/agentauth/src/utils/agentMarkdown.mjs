@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: MIT-0
  */
 
-const AGENTAUTH_MD_VERSION = "1.0.0";
+const AGENTAUTH_PROMPT_VERSION = "1.0.0";
 
 export const AGENTAUTH_MD_ADDITION = `<!-- AGENTAUTH-START -->
-<!-- AGENTAUTH-VERSION: ${AGENTAUTH_MD_VERSION} -->
+<!-- AGENTAUTH-PROMPT-VERSION: ${AGENTAUTH_PROMPT_VERSION} -->
 ## Security (AgentAuth)
 
 ### Red Lines

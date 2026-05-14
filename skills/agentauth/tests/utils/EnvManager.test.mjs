@@ -155,7 +155,7 @@ describe('EnvManager', () => {
     
     it('should update agentauth block if a newer version is available', async () => {
       const oldBlock = `<!-- AGENTAUTH-START -->
-<!-- AGENTAUTH-VERSION: 0.9.0 -->
+<!-- AGENTAUTH-PROMPT-VERSION: 0.9.0 -->
 Old content
 <!-- AGENTAUTH-END -->`;
       const initialContent = `Some content before\n\n${oldBlock}\n\nSome content after`;
