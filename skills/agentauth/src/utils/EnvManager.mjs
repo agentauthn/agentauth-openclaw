@@ -7,7 +7,8 @@
 import path from 'path';
 import fs from 'fs/promises';
 import {
-  AGENTAUTH_MD_ADDITION
+  AGENTAUTH_MD_ADDITION,
+  ASK_FIRST_HEADER
 } from './agentMarkdown.mjs';
 
 export class EnvManager {
@@ -91,10 +92,7 @@ export class EnvManager {
         newContent = (content.trim() ? content.trimEnd() + '\n\n' : '') + AGENTAUTH_MD_ADDITION;
       }
 
-      // Use a regex to remove the "Ask first" section more flexibly.
-      // It looks for a blank line, then "**Ask first:**", then everything up to the next blank line or end of file.
-      const askFirstRegex = /(\n\s*){2,}\*\*Ask first:\*\*[\s\S]*?(?=(\n\s*){2,}|$)/;
-      newContent = newContent.replace(askFirstRegex, '');
+      newContent = this.#removeAskFirstBlock(newContent);
       
       if (originalContent !== newContent) {
         await fs.writeFile(agentMdPath, newContent.trimEnd() + '\n', 'utf8');
@@ -104,5 +102,35 @@ export class EnvManager {
         console.warn(`[WARN] Could not update AGENTS.md: ${error.message}`);
       }
     }
+  }
+
+  #removeAskFirstBlock(content) {
+    const askFirstIndex = content.indexOf(ASK_FIRST_HEADER);
+
+    if (askFirstIndex === -1) {
+      return content;
+    }
+
+    // Find where the section body starts
+    const bodyStart = askFirstIndex + ASK_FIRST_HEADER.length;
+
+    // Look for the next top-level heading
+    const nextHeadingMatch = content
+      .slice(bodyStart)
+      .match(/\n##\s+/);
+
+    let blockEndIndex;
+
+    if (nextHeadingMatch) {
+      blockEndIndex = bodyStart + nextHeadingMatch.index;
+    } else {
+      blockEndIndex = content.length;
+    }
+
+    // Remove extra whitespace around the deleted block
+    const before = content.slice(0, askFirstIndex).trimEnd();
+    const after = content.slice(blockEndIndex).trimStart();
+
+    return [before, after].filter(Boolean).join('\n\n');
   }
 }

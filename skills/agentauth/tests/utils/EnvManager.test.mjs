@@ -182,29 +182,29 @@ Old content
       expect(fs.writeFile).not.toHaveBeenCalled();
     });
 
-    it('should remove "Ask first" header if it exists', async () => {
+    it('should remove "Ask first" block if it exists', async () => {
       // Content has up-to-date agentauth block and the "Ask first" block.
       const initialContent = `${AGENTAUTH_MD_ADDITION}\n\n${ASK_FIRST_BLOCK}`;
       fs.readFile.mockResolvedValue(initialContent);
 
       await envManager.updateAgentMarkdown();
 
-      // The `askFirstBlock` header should be removed, but the list should remain.
+      // The `askFirstBlock` should be removed completely.
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.any(String),
-        `${AGENTAUTH_MD_ADDITION}\n\n${ASK_FIRST_LIST}\n`,
+        `${AGENTAUTH_MD_ADDITION}\n`,
         'utf8'
       );
     });
 
-    it('should remove "Ask first" header and preserve following content', async () => {
+    it('should remove "Ask first" block and preserve following content', async () => {
       const followingContent = '## Next Section\n\nSome more text.';
       const initialContent = `${AGENTAUTH_MD_ADDITION}\n\n${ASK_FIRST_BLOCK}\n\n${followingContent}`;
       fs.readFile.mockResolvedValue(initialContent);
 
       await envManager.updateAgentMarkdown();
 
-      const expectedContent = `${AGENTAUTH_MD_ADDITION}\n\n${ASK_FIRST_LIST}\n\n${followingContent}\n`;
+      const expectedContent = `${AGENTAUTH_MD_ADDITION}\n\n${followingContent}\n`;
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.any(String),
         expectedContent,
