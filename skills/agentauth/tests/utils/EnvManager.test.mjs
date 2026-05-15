@@ -221,4 +221,64 @@ Old content
       expect(consoleWarnSpy).toHaveBeenCalledWith(`[WARN] Could not update AGENTS.md: ${error.message}`);
     });
   });
+
+  describe('restoreAgentMarkdown', () => {
+    let consoleWarnSpy;
+
+    beforeEach(() => {
+      consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should do nothing if AGENTS.md does not exist', async () => {
+      fs.readFile.mockRejectedValue({ code: 'ENOENT' });
+      await envManager.restoreAgentMarkdown();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('should do nothing if "Ask first" block is already present', async () => {
+      fs.readFile.mockResolvedValue(ASK_FIRST_BLOCK);
+      await envManager.restoreAgentMarkdown();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('should warn if "External vs Internal" section not found', async () => {
+      fs.readFile.mockResolvedValue('Some other content');
+      await envManager.restoreAgentMarkdown();
+      expect(consoleWarnSpy).toHaveBeenCalledWith('[WARN] Could not restore "Ask first" block: "## External vs Internal" section not found in AGENTS.md');
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('should add "Ask first" block after "External vs Internal" when it is the last section', async () => {
+      const initialContent = '## External vs Internal\n\nSome details.';
+      fs.readFile.mockResolvedValue(initialContent);
+
+      await envManager.restoreAgentMarkdown();
+
+      const expectedContent = `${initialContent}\n\n${ASK_FIRST_BLOCK}\n`;
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expectedContent,
+        'utf8'
+      );
+    });
+
+    it('should add "Ask first" block between "External vs Internal" and the next section', async () => {
+      const nextSection = '## Next Section\n\nMore details.';
+      const initialContent = `## External vs Internal\n\nSome details.\n\n${nextSection}`;
+      fs.readFile.mockResolvedValue(initialContent);
+
+      await envManager.restoreAgentMarkdown();
+
+      const expectedContent = `## External vs Internal\n\nSome details.\n\n${ASK_FIRST_BLOCK}\n\n${nextSection}\n`;
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expectedContent,
+        'utf8'
+      );
+    });
+  });
 });

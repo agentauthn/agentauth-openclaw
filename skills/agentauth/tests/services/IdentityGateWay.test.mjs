@@ -29,6 +29,7 @@ describe('IdentityGateWay', () => {
     mockEnvManager = {
       saveCredentials: jest.fn(),
       updateAgentMarkdown: jest.fn(),
+      restoreAgentMarkdown: jest.fn(),
     };
     mockCommandExecutor = {
       execute: jest.fn(),
@@ -259,6 +260,49 @@ describe('IdentityGateWay', () => {
       expect(mockEnvManager.saveCredentials).not.toHaveBeenCalled();
       expect(mockEnvManager.updateAgentMarkdown).not.toHaveBeenCalled();
       expect(result).toEqual({ success: false, message: 'Could not create credentials' });
+    });
+  });
+
+  describe('cleanupFlow', () => {
+    let consoleLogSpy;
+
+    beforeEach(() => {
+      consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleLogSpy.mockRestore();
+    });
+
+    it('should call restoreAgentMarkdown on approval', async () => {
+      const initResult = {
+        approvalUrl: new URL('http://example.com/approve'),
+        topic: 'cleanup-topic',
+      };
+      jest.spyOn(idgw, 'approvalInit').mockResolvedValue(initResult);
+      jest.spyOn(idgw, 'approvalWait').mockResolvedValue(JSON.stringify({ status: 'approved' }));
+
+      await idgw.cleanupFlow({ notify: 'test' });
+
+      const actionDescription = "Uninstall AgentAuth skill";
+      expect(idgw.approvalInit).toHaveBeenCalledWith(actionDescription, actionDescription);
+      expect(idgw.approvalWait).toHaveBeenCalledWith('cleanup-topic', initResult.approvalUrl, { notify: 'test' });
+      expect(mockEnvManager.restoreAgentMarkdown).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalledWith('AgentAuth cleanup completed');
+    });
+
+    it('should not call restoreAgentMarkdown when denied', async () => {
+      const initResult = {
+        approvalUrl: new URL('http://example.com/approve'),
+        topic: 'cleanup-topic',
+      };
+      jest.spyOn(idgw, 'approvalInit').mockResolvedValue(initResult);
+      jest.spyOn(idgw, 'approvalWait').mockResolvedValue(JSON.stringify({ status: 'deny' }));
+
+      await idgw.cleanupFlow({ notify: 'test' });
+
+      expect(mockEnvManager.restoreAgentMarkdown).not.toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalledWith('AgentAuth cleanup was denied.');
     });
   });
 });
