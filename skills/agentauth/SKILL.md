@@ -115,6 +115,68 @@ sessions_yield();
 
 ---
 
+## Uninstall: Remove AgentAuth
+
+Before this skill is uninstalled, the agent MUST run the cleanup command to restore the original `AGENTS.md` file and remove integrations.
+
+If the user says something like:
+
+- "Uninstall AgentAuth"
+- "Remove AgentAuth"
+- "Disable AgentAuth"
+- "Clean up AgentAuth"
+
+the agent MUST handle cleanup through a sub-agent.
+
+---
+
+### Required Flow: Non-Blocking Cleanup
+
+**Main Agent Responsibilities:**
+
+1.  Detect that the user is requesting AgentAuth cleanup/uninstallation.
+2.  Spawn a sub-agent that runs the cleanup flow.
+3.  Immediately call `sessions_yield()`.
+4.  Do not narrate internal sub-agent creation. The cleanup flow will notify the user directly.
+
+---
+
+### Sub-Agent Task
+
+The sub-agent runs:
+
+```bash
+~/.openclaw/workspace/skills/agentauth/scripts/cli.cjs cleanup --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>
+```
+
+This command asks the user for final approval before removing AgentAuth-related configurations.
+
+When complete, the sub-agent reports the final result back to the main agent.
+
+---
+
+### Main Agent Example Call
+
+// WARNING: Do NOT add streamTo, attachAs, 
+// attachments, agentId, model, thinking, thread, 
+// cwd or resumeSessionId — these cause validation errors!
+
+```js
+sessions_spawn({
+  runtime: "subagent",
+  mode: "run",
+  cleanup: "delete",
+  lightContext: true,
+  label: "agentauth-cleanup",
+  timeoutSeconds: 300,
+  task: "~/.openclaw/workspace/skills/agentauth/scripts/cli.cjs cleanup --notify <CURRENT_SESSION_CHANNEL>:<CURRENT_SESSION_CHAT_ID>"
+});
+
+sessions_yield();
+```
+
+---
+
 ## Dangerous Operations Definition
 
 Treat the following as **dangerous**:
