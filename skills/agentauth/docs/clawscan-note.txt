@@ -1,0 +1,5 @@
+This skill implements a FIDO2/WebAuthn approval gate for sensitive OpenClaw actions.
+child_process execution occurs only after successful user approval via passkey authentication.
+Network access is limited to AgentAuth onboarding and approval APIs.
+Environment variables are used only for API authentication. No biometric data, passkeys, or local secrets are transmitted.
+AGENTS.md modification persists approval enforcement across sessions and reduces approval bypass or prompt injection risks.
