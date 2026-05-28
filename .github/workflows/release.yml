@@ -91,9 +91,12 @@ jobs:
 
           npm run prepare:clawhub
 
+          CLAWSCAN_NOTE="$(tr '\n' ' ' < ./docs/clawscan-note.txt)"
+
           npx clawhub skill publish ./agentauth \
             --slug agentauth \
             --name "agentauth" \
             --version "$VERSION" \
             --tags latest \
+            --clawscan-note "$CLAWSCAN_NOTE" \
             --workdir .
