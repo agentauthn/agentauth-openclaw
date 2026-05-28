@@ -8,7 +8,8 @@ import path from 'path';
 import fs from 'fs/promises';
 import {
   AGENTAUTH_MD_ADDITION,
-  ASK_FIRST_HEADER
+  ASK_FIRST_HEADER,
+  ASK_FIRST_BLOCK
 } from './agentMarkdown.mjs';
 
 export class EnvManager {
@@ -132,5 +133,57 @@ export class EnvManager {
     const after = content.slice(blockEndIndex).trimStart();
 
     return [before, after].filter(Boolean).join('\n\n');
+  }
+
+  async restoreAgentMarkdown() {
+    const agentMdPath = path.join(this.#openClawDir, 'workspace', 'AGENTS.md');
+    try {
+      let content;
+      try {
+        content = await fs.readFile(agentMdPath, 'utf8');
+      } catch (error) {
+        if (error.code === 'ENOENT') {
+          // File doesn't exist, so nothing to restore.
+          return;
+        }
+        throw error;
+      }
+
+      if (content.includes(ASK_FIRST_HEADER)) {
+        return; // Already present
+      }
+
+      const externalVsInternalHeader = '## External vs Internal';
+      const sectionIndex = content.indexOf(externalVsInternalHeader);
+
+      if (sectionIndex === -1) {
+        console.warn(`[WARN] Could not restore "Ask first" block: "${externalVsInternalHeader}" section not found in AGENTS.md`);
+        return;
+      }
+
+      const bodyStart = sectionIndex + externalVsInternalHeader.length;
+
+      const nextHeadingMatch = content
+        .slice(bodyStart)
+        .match(/^\s*##\s+/m);
+
+      let insertionIndex;
+      if (nextHeadingMatch) {
+        insertionIndex = bodyStart + nextHeadingMatch.index;
+      } else {
+        insertionIndex = content.length;
+      }
+
+      const before = content.substring(0, insertionIndex).trimEnd();
+      const after = content.substring(insertionIndex).trimStart();
+
+      const newContent = [before, ASK_FIRST_BLOCK, after].filter(Boolean).join('\n\n');
+
+      if (content !== newContent) {
+        await fs.writeFile(agentMdPath, newContent.trimEnd() + '\n', 'utf8');
+      }
+    } catch (error) {
+      console.warn(`[WARN] Could not update AGENTS.md: ${error.message}`);
+    }
   }
 }

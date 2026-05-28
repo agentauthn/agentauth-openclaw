@@ -283,6 +283,29 @@ agentauth approval-flow \
 
 ---
 
+### cleanup
+
+Runs the cleanup flow:
+
+1. Creates an approval session to confirm cleanup.
+2. Sends a notification (optional).
+3. Waits for approval.
+4. On approval, restores original configuration and removes AgentAuth integrations.
+
+Run this command before uninstalling the AgentAuth skill.
+
+```bash
+agentauth cleanup [--notify <provider:destination>]
+```
+
+Example:
+
+```bash
+agentauth cleanup --notify slack:channel:C123456
+```
+
+---
+
 ### test-notify
 
 Sends a test message using OpenClaw.

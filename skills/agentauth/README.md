@@ -92,6 +92,22 @@ OpenClaw will send you a secure link where you can:
 
 No manual credential setup is required.
 
+---
+
+## Cleanup the Skill
+
+Before uninstalling the skill, ask OpenClaw to clean it up by saying something like:
+
+```
+Cleanup my AgentAuth
+```
+
+OpenClaw will send you a secure link where you can:
+
+- Approve the cleanup process
+
+This will restore any modified configuration files to their original state and remove integrations.
+
 ## Command Used by OpenClaw
 
 ```bash
